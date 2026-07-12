@@ -1,10 +1,10 @@
 import { LayoutWithChildren } from "@/types";
-import { Header } from "./_components/Header";
+import { Navigation } from "./_components/navigation";
 
 export default function LayoutWithHeader({ children }: LayoutWithChildren) {
   return (
     <div>
-      <Header />
+      <Navigation />
       {children}
     </div>
   );
