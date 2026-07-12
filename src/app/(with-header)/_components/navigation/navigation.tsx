@@ -48,7 +48,7 @@ export function Navigation() {
                 <li>
                   <NavigationMenuLink
                     render={
-                      <Link className='flex items-center' href='/user-settings'>
+                      <Link className='flex items-center' href='/user/settings'>
                         <HugeiconsIcon
                           icon={AccountSetting01Icon}
                           size={24}
@@ -63,7 +63,7 @@ export function Navigation() {
                 <li>
                   <NavigationMenuLink
                     render={
-                      <Link className='flex items-center' href='/user-settings'>
+                      <Link className='flex items-center' href='/user/history'>
                         <HugeiconsIcon
                           icon={HistoryIcon}
                           size={24}
@@ -78,7 +78,7 @@ export function Navigation() {
                 <li>
                   <NavigationMenuLink
                     render={
-                      <Link className='flex items-center' href='/user-settings'>
+                      <Link className='flex items-center' href='/user/settings'>
                         <HugeiconsIcon
                           icon={LogoutCircle01Icon}
                           size={24}
@@ -96,7 +96,7 @@ export function Navigation() {
           <NavigationMenuItem>
             <NavigationMenuLink
               render={
-                <Link href='/user-basket'>
+                <Link href='/user/basket'>
                   <HugeiconsIcon
                     icon={ShoppingBasket02Icon}
                     color='currentColor'
