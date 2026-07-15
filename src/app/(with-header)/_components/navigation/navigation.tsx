@@ -12,6 +12,7 @@ import { HugeiconsIcon } from "@hugeicons/react";
 import {
   AccountSetting01Icon,
   HistoryIcon,
+  LoginCircle01Icon,
   LogoutCircle01Icon,
   ShoppingBasket02Icon,
   UserBlock02Icon,
@@ -78,6 +79,19 @@ export function Navigation() {
                 <li>
                   <NavigationMenuLink
                     render={
+                      <Link className='flex items-center' href='/login'>
+                        <HugeiconsIcon
+                          icon={LoginCircle01Icon}
+                          size={24}
+                          color='currentColor'
+                          strokeWidth={1.5}
+                        />
+                        <span>Log In</span>
+                      </Link>
+                    }
+                  />
+                  {/* <NavigationMenuLink
+                    render={
                       <Link className='flex items-center' href='/user/settings'>
                         <HugeiconsIcon
                           icon={LogoutCircle01Icon}
@@ -88,7 +102,7 @@ export function Navigation() {
                         <span>Log Out</span>
                       </Link>
                     }
-                  />
+                  /> */}
                 </li>
               </ul>
             </NavigationMenuContent>

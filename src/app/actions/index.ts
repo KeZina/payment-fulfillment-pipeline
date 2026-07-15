@@ -1,0 +1,1 @@
+export { submitSignUpForm } from "./auth";
