@@ -1,5 +1,16 @@
+import { UserRole } from "@/constants/auth";
+import { castEnum } from "@/utils/db/cast-enum";
 import { relations } from "drizzle-orm";
-import { pgTable, text, timestamp, boolean, index } from "drizzle-orm/pg-core";
+import {
+  pgTable,
+  pgEnum,
+  text,
+  timestamp,
+  boolean,
+  index,
+} from "drizzle-orm/pg-core";
+
+export const roleEnum = pgEnum("role", castEnum(UserRole));
 
 export const user = pgTable("user", {
   id: text("id").primaryKey(),
@@ -7,6 +18,7 @@ export const user = pgTable("user", {
   email: text("email").notNull().unique(),
   emailVerified: boolean("email_verified").default(false).notNull(),
   image: text("image"),
+  role: roleEnum("role").default(UserRole.User).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at")
     .defaultNow()

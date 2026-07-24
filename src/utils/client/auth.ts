@@ -1,3 +1,14 @@
-import { createAuthClient } from "better-auth/react"; // make sure to import from better-auth/react
+import { createAuthClient } from "better-auth/react";
+import { inferAdditionalFields } from "better-auth/client/plugins";
+import type { User } from "@/types";
 
-export const auth = createAuthClient({});
+export const auth = createAuthClient({
+  user: {
+    additionalFields: {
+      role: {
+        type: "string",
+      },
+    },
+  },
+  plugins: [inferAdditionalFields<User>()],
+});
