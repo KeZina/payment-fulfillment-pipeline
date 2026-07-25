@@ -1,5 +1,5 @@
 import { SignInSchema, SignUpSchema } from "@/schemas";
-import { auth } from "@/utils/server";
+import { auth } from "@/lib/server";
 import * as v from "valibot";
 
 export type SignInCreds = v.InferInput<typeof SignInSchema>;

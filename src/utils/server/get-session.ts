@@ -1,5 +1,5 @@
 import "server-only";
-import { auth } from "@/utils/server";
+import { auth } from "@/lib/server";
 import { headers } from "next/headers";
 
 export async function getSession() {
