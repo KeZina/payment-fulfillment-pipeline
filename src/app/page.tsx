@@ -6,9 +6,9 @@ export default function Page() {
   return (
     <div>
       <NavMenu>
-        <Suspense fallback={<div>12345</div>}>
-          <NavContentContainer />
-        </Suspense>
+        {/* <Suspense fallback={<div>12345</div>}> */}
+        <NavContentContainer />
+        {/* </Suspense> */}
       </NavMenu>
       Hola!
     </div>
