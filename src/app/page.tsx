@@ -1,16 +1,14 @@
-import { Suspense } from "react";
 import { NavMenu } from "../components/nav";
+import { Items } from "./_components/items";
 import { NavContentContainer } from "./_components/nav-content-container";
 
-export default function Page() {
+export default async function Page() {
   return (
     <div>
       <NavMenu>
-        {/* <Suspense fallback={<div>12345</div>}> */}
         <NavContentContainer />
-        {/* </Suspense> */}
       </NavMenu>
-      Hola!
+      <Items />
     </div>
   );
 }
