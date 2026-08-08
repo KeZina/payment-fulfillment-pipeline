@@ -4,3 +4,5 @@ export type { ServerResponse } from "./server-response";
 export type { Item } from "./item";
 export type { CursorToken } from "./cursor-token";
 export type { WithCursor } from "./with-cursor";
+export type { ItemsSortFieldsValues } from "./items-sort-fields-values";
+export type { ItemsFilterFieldsValues } from "./items-filter-fields-values";

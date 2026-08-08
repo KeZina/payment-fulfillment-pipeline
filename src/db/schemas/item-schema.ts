@@ -18,7 +18,6 @@ export const item = pgTable(
     })
       .generatedAlwaysAs(sql`price * (1 - discount)`)
       .notNull(),
-    imageUrl: text("image_url"),
   },
   (table) => [
     check("item_price_check", sql`${table.price} >= 0`),

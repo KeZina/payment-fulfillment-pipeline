@@ -6,7 +6,7 @@ import {
 import { HugeiconsIcon } from "@hugeicons/react";
 import { ShoppingBasket02Icon } from "@hugeicons/core-free-icons";
 
-export async function NavUserBasket() {
+export function NavUserBasket() {
   return (
     <NavigationMenuItem>
       <NavigationMenuLink

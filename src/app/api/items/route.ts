@@ -1,24 +1,33 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/db";
-import { sql, and } from "drizzle-orm";
+import { and, asc, desc, sql } from "drizzle-orm";
 import { item } from "@/db/schemas";
 import { decodeCursor } from "@/utils/server/decode-cursor";
 import { encodeCursor } from "@/utils/server/encode-cursor";
+import { itemsSearchParamsCache } from "@/schemas/items-search-params";
+import {
+  ITEMS_PAGINATION_LIMIT,
+  ItemsFilterFields,
+  SortOrder,
+} from "@/constants";
 
 export async function GET(request: NextRequest) {
   try {
     const searchParams = request.nextUrl.searchParams;
-    const limit = parseInt(searchParams.get("limit") || "10");
+    const limitParam = searchParams.get("limit");
+    const limit = limitParam ? parseInt(limitParam) : ITEMS_PAGINATION_LIMIT;
+
+    const parsedQuery = Object.fromEntries(searchParams.entries());
+    const parsedSearchParams = itemsSearchParamsCache.parse(parsedQuery);
 
     // Extract filtering parameters from the request
-    const hasDiscountParam = searchParams.get("hasDiscount");
-    const hasDiscount = hasDiscountParam === "true";
+    const hasDiscountParam = searchParams.get(ItemsFilterFields.HasDiscount);
     const maxPriceParam = searchParams.get("maxPrice");
     const maxPrice = maxPriceParam ? parseFloat(maxPriceParam) : null;
 
     const conditions = [];
 
-    if (hasDiscount) {
+    if (parsedSearchParams.hasDiscount) {
       conditions.push(sql`${item.discount} > 0`);
     }
     if (maxPrice) {
@@ -26,35 +35,40 @@ export async function GET(request: NextRequest) {
     }
 
     // Extract sorting parameters and cursor from the request
-    const sortByParam = searchParams.get("sortBy");
-    const sortBy = (sortByParam ? sortByParam.split(",") : []) as (
-      | "salePrice"
-      | "price"
-      | "id"
-    )[];
-
-    if (!sortBy.includes("id")) sortBy.push("id"); // Ensure 'id' is always included for consistent ordering
+    const salePriceOrder = parsedSearchParams.salePrice;
 
     const cursor = decodeCursor(searchParams.get("cursor"));
 
     const isCursorUntouched =
       cursor &&
-      cursor.fingerprint.sortBy === sortByParam &&
+      cursor.fingerprint.salePrice === salePriceOrder &&
       cursor.fingerprint.maxPrice === maxPriceParam &&
       cursor.fingerprint.hasDiscount === hasDiscountParam;
 
-    if (isCursorUntouched) {
-      const columnIdentifiers = sortBy.map((field) => item[field]);
-      const bindingValues = sortBy.map((field) => cursor.values[field]);
+    if (isCursorUntouched && cursor) {
+      const isDescending = salePriceOrder === SortOrder.Desc;
+      const cursorSalePrice = cursor.values.salePrice;
+      const cursorId = cursor.values.id;
 
-      conditions.push(sql`(${columnIdentifiers}) < (${bindingValues}  )`);
+      conditions.push(
+        isDescending
+          ? sql`${item.salePrice} < ${cursorSalePrice} OR (${item.salePrice} = ${cursorSalePrice} AND ${item.id} > ${cursorId})`
+          : sql`${item.salePrice} > ${cursorSalePrice} OR (${item.salePrice} = ${cursorSalePrice} AND ${item.id} > ${cursorId})`,
+      );
     } else {
       console.log(
         "Sort parameter changed. Resetting cursor safely back to page 1",
       );
     }
 
-    const orderBy = sortBy.map((field) => sql`${item[field]} DESC`);
+    const orderBy = salePriceOrder
+      ? [
+          salePriceOrder === SortOrder.Desc
+            ? desc(item.salePrice)
+            : asc(item.salePrice),
+          asc(item.id),
+        ]
+      : [desc(item.id)];
 
     const items = await db
       .select()
@@ -68,18 +82,16 @@ export async function GET(request: NextRequest) {
     if (items.length > limit) {
       const nextItem = items.pop();
       if (nextItem) {
-        const nextValues: Record<string, any> = {};
-        sortBy.forEach((field) => {
-          nextValues[field] = nextItem[field];
-        });
-
         nextCursor = encodeCursor({
           fingerprint: {
-            sortBy: sortByParam,
+            salePrice: salePriceOrder,
             maxPrice: maxPriceParam,
             hasDiscount: hasDiscountParam,
           },
-          values: nextValues,
+          values: {
+            salePrice: nextItem.salePrice,
+            id: nextItem.id,
+          },
         });
       }
     }

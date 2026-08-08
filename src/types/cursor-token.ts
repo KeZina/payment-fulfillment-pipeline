@@ -1,6 +1,8 @@
+import { SortOrder } from "@/constants";
+
 export type CursorToken = {
   fingerprint: {
-    sortBy: string | null;
+    salePrice: SortOrder | null;
     maxPrice: string | null;
     hasDiscount: string | null;
   };

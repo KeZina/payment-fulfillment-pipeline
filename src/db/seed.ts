@@ -1,12 +1,13 @@
 "use server";
 import { db } from "./index";
 import { item } from "./schemas/item-schema";
-import type { Item } from "@/types/item";
+
+type ItemInsert = typeof item.$inferInsert;
 
 const image = (lock: number) =>
   `https://loremflickr.com/640/480/food?lock=${lock}`;
 
-const items: Omit<Item, "id">[] = [
+const items: ItemInsert[] = [
   {
     name: "Classic Margherita Pizza",
     description: "Wood-fired pizza with tomato, mozzarella, and fresh basil.",

@@ -5,10 +5,19 @@ import { UseItemsInfiniteFetchProps } from "./use-items-infinite-fetch.types";
 import { Item } from "@/types/item";
 import { AxiosResponse } from "axios";
 import { WithCursor } from "@/types/with-cursor";
+import { SortOrder } from "@/constants";
+import { parseAsBoolean, parseAsStringLiteral, useQueryStates } from "nuqs";
+import { GET_ITEMS_REQUEST } from "@/constants/requests";
+import { buildItemsRequestParams } from "@/utils/items-request";
 
 export const useItemsInfiniteFetch = ({
   inView,
 }: UseItemsInfiniteFetchProps) => {
+  const [{ salePrice, hasDiscount }] = useQueryStates({
+    salePrice: parseAsStringLiteral(Object.values(SortOrder)),
+    hasDiscount: parseAsBoolean.withDefault(false),
+  });
+
   const getKey = (
     pageIndex: number,
     previousPageData: AxiosResponse<WithCursor<Item>> | null,
@@ -16,23 +25,23 @@ export const useItemsInfiniteFetch = ({
     if (previousPageData && previousPageData.data.nextCursor === null)
       return null;
 
-    const params: Record<string, string | string[]> = {
-      limit: "10",
-    };
+    const params = buildItemsRequestParams({
+      salePrice,
+      hasDiscount,
+      cursor:
+        pageIndex > 0 && previousPageData?.data.nextCursor
+          ? previousPageData.data.nextCursor
+          : undefined,
+    });
 
-    if (pageIndex > 0 && previousPageData?.data.nextCursor) {
-      params.cursor = previousPageData.data.nextCursor;
-    }
-
-    params.sortBy = "salePrice,price";
-
-    return { url: "/api/items", params };
+    return { url: GET_ITEMS_REQUEST, params };
   };
 
   const {
     data: items,
     setSize,
     isValidating,
+    isLoading,
   } = useSWRInfinite<AxiosResponse<WithCursor<Item>>>(
     getKey,
     ({ url, params }) => api.get(url, { params }),
@@ -40,7 +49,7 @@ export const useItemsInfiniteFetch = ({
       initialSize: 1,
     },
   );
-
+  console.log(items);
   useEffect(() => {
     if (
       inView &&
@@ -52,6 +61,7 @@ export const useItemsInfiniteFetch = ({
   }, [inView, isValidating, items, setSize]);
 
   return {
+    isLoading,
     items: items?.flatMap((page) => page.data.data) || [],
   };
 };

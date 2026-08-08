@@ -6,7 +6,7 @@ import { NavStoreLabel } from "@/components/nav/nav-store-label";
 import { NavUserBasket } from "../nav-user-basket";
 import { NavEmptyUserData } from "../nav-empty-user-data";
 
-export async function NavContentContainer() {
+export function NavContentContainer() {
   return (
     <NavigationMenuList className='w-[100%] justify-between'>
       <NavStoreLabel />
