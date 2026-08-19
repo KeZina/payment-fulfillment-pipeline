@@ -3,6 +3,7 @@ import {
   inferParserType,
   parseAsBoolean,
   parseAsNumberLiteral,
+  parseAsString,
   parseAsStringLiteral,
 } from "nuqs/server";
 import {
@@ -14,6 +15,7 @@ import {
 const salePriceValues = [SortOrder.Asc, SortOrder.Desc] as const;
 
 export const itemsSearchParamsParsers = {
+  search: parseAsString.withDefault(""),
   salePrice: parseAsStringLiteral(salePriceValues),
   hasDiscount: parseAsBoolean.withDefault(false),
   inStockOnly: parseAsBoolean.withDefault(false),

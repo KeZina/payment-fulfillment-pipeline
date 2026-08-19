@@ -1,1 +1,1 @@
-export { GET_ITEMS_REQUEST } from "./items";
+export { DEFAULT_ITEMS_REQUEST_QUERY, GET_ITEMS_REQUEST } from "./items";

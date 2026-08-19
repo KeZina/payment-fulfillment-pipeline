@@ -12,6 +12,7 @@ import { and, asc, desc, sql } from "drizzle-orm";
 import { cacheLife, cacheTag } from "next/cache";
 
 export async function getItemsPage({
+  search = null,
   salePrice = null,
   hasDiscount = false,
   inStockOnly = false,
@@ -20,6 +21,15 @@ export async function getItemsPage({
   cursor = null,
 }: GetItemsPageParams = {}): Promise<ItemsPage> {
   const conditions = [];
+
+  if (search) {
+    conditions.push(
+      sql`(
+        strpos(lower(${item.name}), lower(${search})) > 0
+        OR strpos(lower(coalesce(${item.description}, '')), lower(${search})) > 0
+      )`,
+    );
+  }
 
   if (hasDiscount) {
     conditions.push(sql`${item.discount} > 0`);
@@ -34,7 +44,8 @@ export async function getItemsPage({
   }
 
   const isMatchingCursor =
-    cursor?.fingerprint.salePrice === salePrice &&
+    cursor?.fingerprint.search === search &&
+    cursor.fingerprint.salePrice === salePrice &&
     cursor.fingerprint.maxPrice === maxPrice &&
     cursor.fingerprint.hasDiscount === hasDiscount &&
     cursor.fingerprint.inStockOnly === inStockOnly &&
@@ -86,6 +97,7 @@ export async function getItemsPage({
     hasNextPage && lastItem
       ? encodeCursor({
           fingerprint: {
+            search,
             salePrice,
             maxPrice,
             hasDiscount,

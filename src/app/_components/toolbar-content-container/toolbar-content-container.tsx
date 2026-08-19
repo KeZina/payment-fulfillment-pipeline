@@ -18,7 +18,7 @@ import { itemsSearchParamsParsers } from "@/schemas/items-search-params";
 import { useQueryStates } from "nuqs";
 
 export function ToolbarContentContainer() {
-  const [{ salePrice, hasDiscount, inStockOnly, limit }, setFilters] =
+  const [{ search, salePrice, hasDiscount, inStockOnly, limit }, setFilters] =
     useQueryStates(itemsSearchParamsParsers);
 
   const handleSalePriceChange = (value: SortOrder) => {
@@ -38,6 +38,7 @@ export function ToolbarContentContainer() {
   };
 
   const hasActiveFilters =
+    search.trim().length > 0 ||
     salePrice !== null ||
     hasDiscount ||
     inStockOnly ||
@@ -45,6 +46,7 @@ export function ToolbarContentContainer() {
 
   const handleResetFilters = () => {
     setFilters({
+      search: null,
       salePrice: null,
       hasDiscount: false,
       inStockOnly: false,

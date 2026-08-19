@@ -7,3 +7,8 @@ export type { ItemsPaginationLimit } from "./pagination-limit";
 export { ItemsFilterFields } from "./items-filter-fields";
 export { ItemsSortFields } from "./items-sort-fields";
 export { SortOrder } from "./sort-order";
+export {
+  ITEMS_SEARCH_MAX_LENGTH,
+  SEARCH_DEBOUNCE_MS,
+  SEARCH_URL_DEBOUNCE,
+} from "./items-search";

@@ -1,8 +1,15 @@
-import { ITEMS_PAGINATION_LIMITS, SortOrder } from "@/constants";
+import {
+  ITEMS_PAGINATION_LIMITS,
+  ITEMS_SEARCH_MAX_LENGTH,
+  SortOrder,
+} from "@/constants";
 import * as v from "valibot";
 
 export const CursorTokenSchema = v.strictObject({
   fingerprint: v.strictObject({
+    search: v.nullable(
+      v.pipe(v.string(), v.maxLength(ITEMS_SEARCH_MAX_LENGTH)),
+    ),
     salePrice: v.nullable(v.enum(SortOrder)),
     maxPrice: v.nullable(v.pipe(v.number(), v.finite())),
     hasDiscount: v.boolean(),

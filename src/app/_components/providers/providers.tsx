@@ -1,8 +1,6 @@
 import { getCachedDefaultItemsPage } from "@/lib/server";
-import {
-  createItemsGetKey,
-  DEFAULT_ITEMS_REQUEST_QUERY,
-} from "@/utils/items-request";
+import { DEFAULT_ITEMS_REQUEST_QUERY } from "@/constants/requests";
+import { createItemsGetKey } from "@/utils/items-request";
 import { SWRConfig } from "swr";
 import { unstable_serialize } from "swr/infinite";
 

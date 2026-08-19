@@ -3,20 +3,15 @@ import type { ItemsPaginationLimit } from "@/constants";
 import { GET_ITEMS_REQUEST } from "@/constants/requests";
 import type { ItemsPage, ItemsRequestQuery } from "@/types";
 
-export const DEFAULT_ITEMS_REQUEST_QUERY: ItemsRequestQuery = {
-  salePrice: null,
-  hasDiscount: false,
-  inStockOnly: false,
-  limit: ITEMS_PAGINATION_LIMIT,
-};
-
 export function buildItemsRequestParams({
+  search,
   salePrice,
   hasDiscount,
   inStockOnly,
   cursor,
   limit = ITEMS_PAGINATION_LIMIT,
 }: {
+  search?: string | null;
   salePrice?: string | null;
   hasDiscount?: boolean | null;
   inStockOnly?: boolean | null;
@@ -26,6 +21,12 @@ export function buildItemsRequestParams({
   const params: Record<string, string> = {
     limit: limit.toString(),
   };
+
+  const normalizedSearch = search?.trim();
+
+  if (normalizedSearch) {
+    params.search = normalizedSearch;
+  }
 
   if (salePrice) {
     params.salePrice = salePrice;

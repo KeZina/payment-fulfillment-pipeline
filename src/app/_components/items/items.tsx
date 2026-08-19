@@ -19,7 +19,13 @@ export function Items() {
       ? ITEMS_PLACEHOLDER.map((item: Item, index: number) => (
           <ItemCard key={`placeholder_${index}`} item={item} isPlaceholder />
         ))
-      : items.map((item: Item) => <ItemCard key={item.id} item={item} />);
+      : items.map((item: Item, index: number) => (
+          <ItemCard
+            key={item.id}
+            item={item}
+            ref={index === items.length - 1 ? ref : undefined}
+          />
+        ));
 
   return (
     <div
@@ -36,7 +42,7 @@ export function Items() {
         >
           <p className='font-semibold text-rose-800'>Unable to load items</p>
           <p className='mt-1 text-sm text-rose-600'>
-            Please try changing the filter again.
+            Please try changing the search or filters.
           </p>
         </div>
       ) : isEmpty ? (
@@ -46,20 +52,10 @@ export function Items() {
         >
           <p className='font-semibold text-slate-700'>No items found</p>
           <p className='mt-1 text-sm text-slate-500'>
-            There are no items matching the selected filters.
+            No items match your search or selected filters.
           </p>
         </div>
-      ) : (
-        <>
-          {cards}
-          <div ref={ref} className='h-10' />
-          {isRefreshing && (
-            <span className='sticky right-2 top-2 self-start rounded-full bg-slate-900/80 px-2.5 py-1 text-xs font-medium whitespace-nowrap text-white shadow-sm'>
-              Updating…
-            </span>
-          )}
-        </>
-      )}
+      ) : cards}
     </div>
   );
 }

@@ -5,9 +5,8 @@ import * as v from "valibot";
 
 export async function GET(request: NextRequest) {
   try {
-    const searchParams = request.nextUrl.searchParams;
     const result = parseItemsRouteQuery(
-      Object.fromEntries(searchParams.entries()),
+      Object.fromEntries(request.nextUrl.searchParams.entries()),
     );
 
     if (!result.success) {

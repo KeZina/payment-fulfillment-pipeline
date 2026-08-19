@@ -5,7 +5,7 @@ import {
 } from "./item-card.styles";
 import { ItemCardProps } from "./item-card.types";
 
-export function ItemCard({ item, isPlaceholder }: ItemCardProps) {
+export function ItemCard({ item, isPlaceholder, ref }: ItemCardProps) {
   // Keep the accent varied while rendering the same class on the server and client.
   const accentClass = isPlaceholder
     ? foodIllustrationPlaceholderClass
@@ -17,6 +17,7 @@ export function ItemCard({ item, isPlaceholder }: ItemCardProps) {
 
   return (
     <div
+      ref={ref}
       className={cn(
         "group flex h-full w-36 min-w-[9rem] flex-col justify-between rounded-xl border border-slate-200 bg-white p-3 shadow-sm transition-all duration-200 hover:z-10 hover:-translate-y-1 hover:rotate-[-3deg] hover:scale-[1.04] hover:shadow-md will-change-transform transform-gpu origin-center",
         isPlaceholder && "opacity-50",

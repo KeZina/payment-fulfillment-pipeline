@@ -3,6 +3,7 @@ import "server-only";
 import {
   ITEMS_PAGINATION_LIMIT,
   ITEMS_PAGINATION_LIMITS,
+  ITEMS_SEARCH_MAX_LENGTH,
   SortOrder,
 } from "@/constants";
 import type { CursorToken } from "@/types";
@@ -31,6 +32,15 @@ const MaxPriceQueryParamSchema = v.pipe(
   v.minValue(0, "Max price must be non-negative"),
 );
 
+const SearchQueryParamSchema = v.pipe(
+  v.string(),
+  v.trim(),
+  v.maxLength(
+    ITEMS_SEARCH_MAX_LENGTH,
+    `Search must be at most ${ITEMS_SEARCH_MAX_LENGTH} characters`,
+  ),
+);
+
 const CursorQueryParamSchema = v.pipe(
   v.string(),
   v.nonEmpty("Cursor cannot be empty"),
@@ -40,6 +50,7 @@ const CursorQueryParamSchema = v.pipe(
 
 export const ItemsRouteQuerySchema = v.pipe(
   v.strictObject({
+    search: v.optional(SearchQueryParamSchema),
     salePrice: v.optional(v.enum(SortOrder, "Invalid sale price order")),
     hasDiscount: v.optional(BooleanQueryParamSchema),
     inStockOnly: v.optional(BooleanQueryParamSchema),
@@ -48,6 +59,7 @@ export const ItemsRouteQuerySchema = v.pipe(
     cursor: v.optional(CursorQueryParamSchema),
   }),
   v.transform((query) => ({
+    search: query.search || null,
     salePrice: query.salePrice ?? null,
     hasDiscount: query.hasDiscount ?? false,
     inStockOnly: query.inStockOnly ?? false,

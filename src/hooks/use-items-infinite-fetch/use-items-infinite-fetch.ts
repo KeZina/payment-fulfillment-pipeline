@@ -1,7 +1,9 @@
-import { useEffect } from "react";
+import { useDeferredValue, useEffect } from "react";
 import useSWRInfinite from "swr/infinite";
 import { UseItemsInfiniteFetchProps } from "./use-items-infinite-fetch.types";
 import { useQueryStates } from "nuqs";
+import { useDebounce } from "use-debounce";
+import { SEARCH_DEBOUNCE_MS } from "@/constants";
 import { itemsSearchParamsParsers } from "@/schemas/items-search-params";
 import type { ItemsPage } from "@/types";
 import { createItemsGetKey } from "@/utils/items-request";
@@ -9,11 +11,19 @@ import { createItemsGetKey } from "@/utils/items-request";
 export const useItemsInfiniteFetch = ({
   inView,
 }: UseItemsInfiniteFetchProps) => {
-  const [{ salePrice, hasDiscount, inStockOnly, limit }] = useQueryStates(
-    itemsSearchParamsParsers,
+  const [{ search, salePrice, hasDiscount, inStockOnly, limit }] =
+    useQueryStates(itemsSearchParamsParsers);
+
+  const normalizedSearch = search.trim();
+  const [debouncedSearch] = useDebounce(
+    normalizedSearch,
+    SEARCH_DEBOUNCE_MS,
   );
+  const deferredSearch = useDeferredValue(debouncedSearch);
+  const isWaitingForSearch = normalizedSearch !== deferredSearch;
 
   const getKey = createItemsGetKey({
+    search: deferredSearch,
     salePrice,
     hasDiscount,
     inStockOnly,
@@ -35,12 +45,13 @@ export const useItemsInfiniteFetch = ({
   useEffect(() => {
     if (
       inView &&
+      !isWaitingForSearch &&
       pages?.[pages.length - 1]?.nextCursor &&
       !isValidating
     ) {
       setSize((prevSize) => prevSize + 1);
     }
-  }, [inView, isValidating, pages, setSize]);
+  }, [inView, isValidating, isWaitingForSearch, pages, setSize]);
 
   const fetchedItems = pages?.flatMap((page) => page.data) ?? [];
   const visibleItems = inStockOnly
@@ -51,7 +62,8 @@ export const useItemsInfiniteFetch = ({
   return {
     error,
     isLoading: isInitialLoading,
-    isRefreshing: isValidating && !isInitialLoading,
+    isRefreshing:
+      (isWaitingForSearch || isValidating) && !isInitialLoading,
     items: visibleItems,
   };
 };
