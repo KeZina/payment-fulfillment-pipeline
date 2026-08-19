@@ -4,6 +4,7 @@ import type { CursorToken } from "../cursor-token";
 export type GetItemsPageParams = {
   salePrice?: SortOrder | null;
   hasDiscount?: boolean;
+  inStockOnly?: boolean;
   limit?: ItemsPaginationLimit;
   maxPrice?: number | null;
   cursor?: CursorToken | null;

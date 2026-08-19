@@ -14,6 +14,7 @@ import { cacheLife, cacheTag } from "next/cache";
 export async function getItemsPage({
   salePrice = null,
   hasDiscount = false,
+  inStockOnly = false,
   limit = ITEMS_PAGINATION_LIMIT,
   maxPrice = null,
   cursor = null,
@@ -24,6 +25,10 @@ export async function getItemsPage({
     conditions.push(sql`${item.discount} > 0`);
   }
 
+  if (inStockOnly) {
+    conditions.push(sql`${item.quantity} > 0`);
+  }
+
   if (maxPrice !== null) {
     conditions.push(sql`${item.salePrice} <= ${maxPrice}`);
   }
@@ -32,6 +37,7 @@ export async function getItemsPage({
     cursor?.fingerprint.salePrice === salePrice &&
     cursor.fingerprint.maxPrice === maxPrice &&
     cursor.fingerprint.hasDiscount === hasDiscount &&
+    cursor.fingerprint.inStockOnly === inStockOnly &&
     cursor.fingerprint.limit === limit;
 
   if (cursor && isMatchingCursor) {
@@ -58,7 +64,15 @@ export async function getItemsPage({
     : [desc(item.id)];
 
   const rows = await db
-    .select()
+    .select({
+      id: item.id,
+      name: item.name,
+      description: item.description,
+      price: item.price,
+      discount: item.discount,
+      quantity: item.quantity,
+      salePrice: item.salePrice,
+    })
     .from(item)
     .where(conditions.length ? and(...conditions) : undefined)
     .orderBy(...orderBy)
@@ -75,6 +89,7 @@ export async function getItemsPage({
             salePrice,
             maxPrice,
             hasDiscount,
+            inStockOnly,
             limit,
           },
           values: {

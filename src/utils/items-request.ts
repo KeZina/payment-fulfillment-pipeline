@@ -6,17 +6,20 @@ import type { ItemsPage, ItemsRequestQuery } from "@/types";
 export const DEFAULT_ITEMS_REQUEST_QUERY: ItemsRequestQuery = {
   salePrice: null,
   hasDiscount: false,
+  inStockOnly: false,
   limit: ITEMS_PAGINATION_LIMIT,
 };
 
 export function buildItemsRequestParams({
   salePrice,
   hasDiscount,
+  inStockOnly,
   cursor,
   limit = ITEMS_PAGINATION_LIMIT,
 }: {
   salePrice?: string | null;
   hasDiscount?: boolean | null;
+  inStockOnly?: boolean | null;
   cursor?: string | null;
   limit?: ItemsPaginationLimit;
 }): Record<string, string> {
@@ -28,8 +31,12 @@ export function buildItemsRequestParams({
     params.salePrice = salePrice;
   }
 
-  if (typeof hasDiscount === "boolean") {
-    params.hasDiscount = hasDiscount.toString();
+  if (hasDiscount) {
+    params.hasDiscount = "true";
+  }
+
+  if (inStockOnly) {
+    params.inStockOnly = "true";
   }
 
   if (cursor) {

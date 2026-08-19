@@ -7,6 +7,16 @@ type ItemInsert = typeof item.$inferInsert;
 const image = (lock: number) =>
   `https://loremflickr.com/640/480/food?lock=${lock}`;
 
+const OUT_OF_STOCK_ITEM_NAMES = new Set([
+  "Truffle Mushroom Pizza",
+  "Salmon Sushi Platter",
+  "Pesto Tagliatelle",
+  "Chicken Biryani",
+  "Grilled Ribeye Steak",
+  "New York Cheesecake",
+  "Iced Caramel Latte",
+]);
+
 const items: ItemInsert[] = [
   {
     name: "Classic Margherita Pizza",
@@ -284,6 +294,7 @@ const items: ItemInsert[] = [
   name,
   description,
   price,
+  quantity: OUT_OF_STOCK_ITEM_NAMES.has(name) ? 0 : ((index * 7) % 20) + 1,
   imageUrl: image(index + 1),
 }));
 

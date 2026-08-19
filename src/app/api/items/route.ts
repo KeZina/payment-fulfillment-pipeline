@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { parseItemsRouteQuery } from "@/schemas/items-route-query";
-import { getItemsPage } from "@/lib/server";
+import { getItemsPage } from "@/lib/server/items";
 import * as v from "valibot";
 
 export async function GET(request: NextRequest) {

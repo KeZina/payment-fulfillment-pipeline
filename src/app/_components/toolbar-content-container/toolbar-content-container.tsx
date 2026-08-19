@@ -1,14 +1,15 @@
 "use client";
 
 import {
-  MenubarCheckboxItem,
   MenubarContent,
   MenubarMenu,
   MenubarRadioGroup,
   MenubarRadioItem,
   MenubarTrigger,
 } from "@/components/ui/menubar";
+import { Button } from "@/components/ui/button";
 import {
+  ITEMS_PAGINATION_LIMIT,
   ITEMS_PAGINATION_LIMITS,
   type ItemsPaginationLimit,
   SortOrder,
@@ -17,9 +18,8 @@ import { itemsSearchParamsParsers } from "@/schemas/items-search-params";
 import { useQueryStates } from "nuqs";
 
 export function ToolbarContentContainer() {
-  const [{ salePrice, hasDiscount, limit }, setFilters] = useQueryStates(
-    itemsSearchParamsParsers,
-  );
+  const [{ salePrice, hasDiscount, inStockOnly, limit }, setFilters] =
+    useQueryStates(itemsSearchParamsParsers);
 
   const handleSalePriceChange = (value: SortOrder) => {
     setFilters({ salePrice: value });
@@ -29,14 +29,46 @@ export function ToolbarContentContainer() {
     setFilters({ hasDiscount: checked });
   };
 
+  const handleInStockOnlyChange = (checked: boolean) => {
+    setFilters({ inStockOnly: checked });
+  };
+
   const handleLimitChange = (value: ItemsPaginationLimit) => {
     setFilters({ limit: value });
   };
 
+  const hasActiveFilters =
+    salePrice !== null ||
+    hasDiscount ||
+    inStockOnly ||
+    limit !== ITEMS_PAGINATION_LIMIT;
+
+  const handleResetFilters = () => {
+    setFilters({
+      salePrice: null,
+      hasDiscount: false,
+      inStockOnly: false,
+      limit: ITEMS_PAGINATION_LIMIT,
+    });
+  };
+
+  const priceLabel =
+    salePrice === SortOrder.Desc
+      ? "Price: high to low"
+      : salePrice === SortOrder.Asc
+        ? "Price: low to high"
+        : "Sort by price";
+
   return (
     <>
+      <span className='px-2 text-xs font-semibold uppercase tracking-wide text-slate-500'>
+        Filters
+      </span>
+      <span className='mx-1 h-5 w-px bg-slate-200' aria-hidden='true' />
       <MenubarMenu>
-        <MenubarTrigger>Price</MenubarTrigger>
+        <MenubarTrigger className='h-8 w-36 whitespace-nowrap px-3'>
+          {priceLabel}
+        </MenubarTrigger>
         <MenubarContent>
           <MenubarRadioGroup
             value={salePrice}
@@ -51,16 +83,28 @@ export function ToolbarContentContainer() {
           </MenubarRadioGroup>
         </MenubarContent>
       </MenubarMenu>
+      <Button
+        aria-pressed={hasDiscount}
+        onClick={() => handleDiscountChange(!hasDiscount)}
+        size='sm'
+        type='button'
+        variant={hasDiscount ? "secondary" : "ghost"}
+      >
+        On discount
+      </Button>
+      <Button
+        aria-pressed={inStockOnly}
+        onClick={() => handleInStockOnlyChange(!inStockOnly)}
+        size='sm'
+        type='button'
+        variant={inStockOnly ? "secondary" : "ghost"}
+      >
+        In stock only
+      </Button>
       <MenubarMenu>
-        <MenubarCheckboxItem
-          checked={hasDiscount}
-          onCheckedChange={handleDiscountChange}
-        >
-          On discount
-        </MenubarCheckboxItem>
-      </MenubarMenu>
-      <MenubarMenu>
-        <MenubarTrigger>Page size: {limit}</MenubarTrigger>
+        <MenubarTrigger className='h-8 whitespace-nowrap px-3'>
+          {limit} per page
+        </MenubarTrigger>
         <MenubarContent>
           <MenubarRadioGroup value={limit} onValueChange={handleLimitChange}>
             {ITEMS_PAGINATION_LIMITS.map((pageSize) => (
@@ -71,6 +115,16 @@ export function ToolbarContentContainer() {
           </MenubarRadioGroup>
         </MenubarContent>
       </MenubarMenu>
+      <Button
+        className='text-slate-500'
+        disabled={!hasActiveFilters}
+        onClick={handleResetFilters}
+        size='sm'
+        type='button'
+        variant='ghost'
+      >
+        Reset
+      </Button>
     </>
   );
 }

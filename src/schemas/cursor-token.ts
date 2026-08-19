@@ -6,6 +6,7 @@ export const CursorTokenSchema = v.strictObject({
     salePrice: v.nullable(v.enum(SortOrder)),
     maxPrice: v.nullable(v.pipe(v.number(), v.finite())),
     hasDiscount: v.boolean(),
+    inStockOnly: v.boolean(),
     limit: v.picklist(ITEMS_PAGINATION_LIMITS),
   }),
   values: v.strictObject({

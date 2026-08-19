@@ -42,6 +42,7 @@ export const ItemsRouteQuerySchema = v.pipe(
   v.strictObject({
     salePrice: v.optional(v.enum(SortOrder, "Invalid sale price order")),
     hasDiscount: v.optional(BooleanQueryParamSchema),
+    inStockOnly: v.optional(BooleanQueryParamSchema),
     limit: v.optional(PaginationLimitQueryParamSchema),
     maxPrice: v.optional(MaxPriceQueryParamSchema),
     cursor: v.optional(CursorQueryParamSchema),
@@ -49,6 +50,7 @@ export const ItemsRouteQuerySchema = v.pipe(
   v.transform((query) => ({
     salePrice: query.salePrice ?? null,
     hasDiscount: query.hasDiscount ?? false,
+    inStockOnly: query.inStockOnly ?? false,
     limit: query.limit ?? ITEMS_PAGINATION_LIMIT,
     maxPrice: query.maxPrice ?? null,
     cursor: query.cursor ?? null,

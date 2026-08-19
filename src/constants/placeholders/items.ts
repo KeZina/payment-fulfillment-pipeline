@@ -9,6 +9,7 @@ export const ITEMS_PLACEHOLDER: Readonly<Item[]> = Array.from(
     description: "Loading...",
     price: "0.00",
     discount: "0.00",
+    quantity: 0,
     salePrice: "0.00",
   }),
 );

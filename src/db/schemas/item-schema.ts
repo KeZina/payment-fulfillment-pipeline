@@ -1,6 +1,6 @@
 import { sql } from "drizzle-orm";
 import { check } from "drizzle-orm/gel-core";
-import { pgTable, integer, text, numeric } from "drizzle-orm/pg-core";
+import { integer, numeric, pgTable, text } from "drizzle-orm/pg-core";
 
 export const item = pgTable(
   "item",
@@ -12,6 +12,7 @@ export const item = pgTable(
     discount: numeric("discount", { precision: 4, scale: 2 })
       .default("0.00")
       .notNull(),
+    quantity: integer("quantity").default(0).notNull(),
     salePrice: numeric("sale_price", {
       precision: 10,
       scale: 2,
@@ -21,6 +22,7 @@ export const item = pgTable(
   },
   (table) => [
     check("item_price_check", sql`${table.price} >= 0`),
+    check("item_quantity_check", sql`${table.quantity} >= 0`),
     check(
       "item_discount_check",
       sql`${table.discount} >= 0 AND ${table.discount} <= 1`,

@@ -18,7 +18,7 @@ export default function Page() {
           </NavMenu>
           <Toolbar
             classes={{
-              root: "w-1/3 justify-center m-auto border-0",
+              root: "mx-auto mt-4 w-fit max-w-[calc(100%_-_2rem)] flex-wrap justify-center gap-1 rounded-2xl border border-slate-200 bg-white p-1.5 shadow-sm",
             }}
           >
             <Suspense>
