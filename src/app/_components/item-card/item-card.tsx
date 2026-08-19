@@ -6,12 +6,10 @@ import {
 import { ItemCardProps } from "./item-card.types";
 
 export function ItemCard({ item, isPlaceholder }: ItemCardProps) {
-  // Randomly select an accent class for the food illustration
+  // Keep the accent varied while rendering the same class on the server and client.
   const accentClass = isPlaceholder
     ? foodIllustrationPlaceholderClass
-    : foodIllustrationClasses[
-        Math.floor(Math.random() * foodIllustrationClasses.length)
-      ];
+    : foodIllustrationClasses[item.id % foodIllustrationClasses.length];
 
   return (
     <div
