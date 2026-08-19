@@ -10,7 +10,7 @@ export function ProvidersClient({ children }: { children: ReactNode }) {
     <NuqsAdapter>
       <SWRConfig
         value={{
-          fetcher: (url: string) => api.get(url),
+          fetcher: async (url: string) => (await api.get(url)).data,
           revalidateOnFocus: false,
           revalidateOnReconnect: true,
           shouldRetryOnError: true,

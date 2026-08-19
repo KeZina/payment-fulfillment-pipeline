@@ -1,45 +1,25 @@
-import { GET_ITEMS_REQUEST } from "@/constants/requests/items";
-import { buildItemsRequestParams } from "@/utils/items-request";
-import { itemsSearchParamsCache } from "@/schemas/items-search-params";
-import { SearchParams } from "nuqs/server";
+import { getCachedDefaultItemsPage } from "@/lib/server";
+import {
+  createItemsGetKey,
+  DEFAULT_ITEMS_REQUEST_QUERY,
+} from "@/utils/items-request";
 import { SWRConfig } from "swr";
-import { Suspense } from "react";
-
-async function getItemsFallback(searchParams: SearchParams) {
-  const parsedSearchParams = itemsSearchParamsCache.parse(searchParams);
-  const params = buildItemsRequestParams({
-    salePrice: parsedSearchParams.salePrice,
-    hasDiscount: parsedSearchParams.hasDiscount,
-  });
-
-  const response = await fetch(
-    `${process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000"}${GET_ITEMS_REQUEST}?${new URLSearchParams(params).toString()}`,
-    {
-      method: "GET",
-      cache: "no-store",
-    },
-  );
-
-  if (!response.ok) {
-    throw new Error("Failed to fetch items");
-  }
-
-  return response.json();
-}
+import { unstable_serialize } from "swr/infinite";
 
 export async function Providers({
   children,
-  searchParams,
 }: {
   children: React.ReactNode;
-  searchParams: SearchParams;
 }) {
-  const items = await getItemsFallback(searchParams);
+  const initialPage = await getCachedDefaultItemsPage();
+  const defaultGetKey = createItemsGetKey(DEFAULT_ITEMS_REQUEST_QUERY);
 
   return (
     <SWRConfig
       value={{
-        fallback: { GET_ITEMS_REQUEST: items },
+        fallback: {
+          [unstable_serialize(defaultGetKey)]: [initialPage],
+        },
       }}
     >
       {children}

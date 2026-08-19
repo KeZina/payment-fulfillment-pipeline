@@ -1,11 +1,17 @@
-import { CursorToken } from "@/types/cursor-token";
+import "server-only";
+
+import { parseCursorToken } from "@/schemas/cursor-token";
+import type { CursorToken } from "@/types";
 
 export const decodeCursor = (token: string | null): CursorToken | null => {
   if (!token) return null;
   try {
-    return JSON.parse(
+    const input: unknown = JSON.parse(
       Buffer.from(token, "base64url").toString("utf-8"),
-    ) as CursorToken;
+    );
+    const result = parseCursorToken(input);
+
+    return result.success ? result.output : null;
   } catch {
     return null;
   }

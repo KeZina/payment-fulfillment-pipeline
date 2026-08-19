@@ -5,11 +5,10 @@ import { NavContentContainer } from "./_components/nav-content-container";
 import { ToolbarContentContainer } from "./_components/toolbar-content-container";
 import { Suspense } from "react";
 import { Providers, ProvidersClient } from "./_components/providers";
-import { SearchParams } from "nuqs/server";
 
-export default function Page({ searchParams }: { searchParams: SearchParams }) {
+export default function Page() {
   return (
-    <Providers searchParams={searchParams}>
+    <Providers>
       <ProvidersClient>
         <div>
           <NavMenu>

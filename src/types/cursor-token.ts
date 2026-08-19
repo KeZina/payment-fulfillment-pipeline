@@ -1,10 +1,4 @@
-import { SortOrder } from "@/constants";
+import type { CursorTokenSchema } from "@/schemas/cursor-token";
+import type * as v from "valibot";
 
-export type CursorToken = {
-  fingerprint: {
-    salePrice: SortOrder | null;
-    maxPrice: string | null;
-    hasDiscount: string | null;
-  };
-  values: Record<string, any>;
-};
+export type CursorToken = v.InferOutput<typeof CursorTokenSchema>;

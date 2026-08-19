@@ -1,4 +1,13 @@
 import { ITEMS_PAGINATION_LIMIT } from "@/constants";
+import type { ItemsPaginationLimit } from "@/constants";
+import { GET_ITEMS_REQUEST } from "@/constants/requests";
+import type { ItemsPage, ItemsRequestQuery } from "@/types";
+
+export const DEFAULT_ITEMS_REQUEST_QUERY: ItemsRequestQuery = {
+  salePrice: null,
+  hasDiscount: false,
+  limit: ITEMS_PAGINATION_LIMIT,
+};
 
 export function buildItemsRequestParams({
   salePrice,
@@ -9,7 +18,7 @@ export function buildItemsRequestParams({
   salePrice?: string | null;
   hasDiscount?: boolean | null;
   cursor?: string | null;
-  limit?: number;
+  limit?: ItemsPaginationLimit;
 }): Record<string, string> {
   const params: Record<string, string> = {
     limit: limit.toString(),
@@ -28,4 +37,20 @@ export function buildItemsRequestParams({
   }
 
   return params;
+}
+
+export function createItemsGetKey(query: ItemsRequestQuery) {
+  return (pageIndex: number, previousPageData: ItemsPage | null) => {
+    if (previousPageData?.nextCursor === null) {
+      return null;
+    }
+
+    const params = buildItemsRequestParams({
+      ...query,
+      cursor:
+        pageIndex > 0 ? (previousPageData?.nextCursor ?? undefined) : undefined,
+    });
+
+    return `${GET_ITEMS_REQUEST}?${new URLSearchParams(params).toString()}`;
+  };
 }
