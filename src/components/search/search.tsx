@@ -1,5 +1,6 @@
 "use client";
 
+import type { ChangeEventHandler } from "react";
 import {
   InputGroup,
   InputGroupAddon,
@@ -14,6 +15,7 @@ import { itemsSearchParamsParsers } from "@/schemas/items-search-params";
 import { Cancel01Icon, SearchIcon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { useQueryState } from "nuqs";
+import { searchStyles } from "./search.styles";
 
 export function Search() {
   const [search, setSearch] = useQueryState(
@@ -22,19 +24,29 @@ export function Search() {
   );
 
   const updateSearch = (value: string | null) => {
-    setSearch(value || null, {
+    const nextSearch = value || null;
+
+    setSearch(nextSearch, {
       history: "replace",
       limitUrlUpdates: SEARCH_URL_DEBOUNCE,
     });
   };
 
+  const handleSearchChange: ChangeEventHandler<HTMLInputElement> = (event) => {
+    updateSearch(event.currentTarget.value);
+  };
+
+  const handleClearSearch = () => {
+    updateSearch(null);
+  };
+
   return (
-    <InputGroup className='w-full max-w-xl' role='search'>
+    <InputGroup className={searchStyles.root} role='search'>
       <InputGroupInput
-        aria-label='Search menu items'
+        aria-label='Search items'
         autoComplete='off'
         maxLength={ITEMS_SEARCH_MAX_LENGTH}
-        onChange={(event) => updateSearch(event.currentTarget.value)}
+        onChange={handleSearchChange}
         placeholder='Search items...'
         type='search'
         value={search}
@@ -52,7 +64,7 @@ export function Search() {
         <InputGroupAddon align='inline-end'>
           <InputGroupButton
             aria-label='Clear search'
-            onClick={() => updateSearch(null)}
+            onClick={handleClearSearch}
             size='icon-xs'
           >
             <HugeiconsIcon

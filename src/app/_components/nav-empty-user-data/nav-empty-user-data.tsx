@@ -14,11 +14,12 @@ import {
 export async function NavEmptyUserData() {
   return (
     <NavigationMenuItem>
-      <NavigationMenuTrigger>
+      <NavigationMenuTrigger aria-label='Open sign-in menu'>
         <HugeiconsIcon
           icon={UserBlock02Icon}
           color='currentColor'
           strokeWidth={1.5}
+          aria-hidden='true'
         />
       </NavigationMenuTrigger>
       <NavigationMenuContent>
@@ -26,11 +27,12 @@ export async function NavEmptyUserData() {
           <li className='flex justify-around border-b'>
             <NavigationMenuLink
               render={
-                <Link className='flex items-center' href='/sign-in'>
+                <Link href='/sign-in'>
                   <HugeiconsIcon
                     icon={LogoutCircle01Icon}
                     color='currentColor'
                     strokeWidth={1.5}
+                    aria-hidden='true'
                   />
                   <span>Log In</span>
                 </Link>

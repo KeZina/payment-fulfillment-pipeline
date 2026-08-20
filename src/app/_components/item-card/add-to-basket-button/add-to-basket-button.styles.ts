@@ -1,0 +1,3 @@
+export const addToBasketButtonStyles = {
+  root: "pointer-events-none mt-3 w-full translate-y-1.5 opacity-0 shadow-sm transition-[opacity,transform] duration-200 group-hover:pointer-events-auto group-hover:translate-y-0 group-hover:opacity-100 group-focus-within:pointer-events-auto group-focus-within:translate-y-0 group-focus-within:opacity-100 focus-visible:translate-y-0 focus-visible:opacity-100 disabled:opacity-0 group-hover:disabled:opacity-100 group-focus-within:disabled:opacity-100 [@media(hover:none)]:pointer-events-auto [@media(hover:none)]:translate-y-0 [@media(hover:none)]:opacity-100",
+} as const;

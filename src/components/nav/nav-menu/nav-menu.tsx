@@ -1,9 +1,10 @@
 import { NavigationMenu } from "@/components/ui/navigation-menu";
 import { WithChildren } from "@/types";
+import { navMenuStyles } from "./nav-menu.styles";
 
 export function NavMenu({ children }: WithChildren) {
   return (
-    <NavigationMenu className='w-full max-w-full p-2'>
+    <NavigationMenu className={navMenuStyles.root}>
       {children}
     </NavigationMenu>
   );

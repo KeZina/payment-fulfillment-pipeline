@@ -24,11 +24,12 @@ export async function NavUserData() {
     <>
       {session ? (
         <NavigationMenuItem>
-          <NavigationMenuTrigger>
+          <NavigationMenuTrigger aria-label='Open account menu'>
             <HugeiconsIcon
               icon={UserCheck02Icon}
               color='currentColor'
               strokeWidth={1.5}
+              aria-hidden='true'
             />
           </NavigationMenuTrigger>
           <NavigationMenuContent>
@@ -39,11 +40,12 @@ export async function NavUserData() {
               <li>
                 <NavigationMenuLink
                   render={
-                    <Link className='flex items-center' href='/user/settings'>
+                    <Link href='/user/settings'>
                       <HugeiconsIcon
                         icon={AccountSetting01Icon}
                         color='currentColor'
                         strokeWidth={1.5}
+                        aria-hidden='true'
                       />
                       <span>Account</span>
                     </Link>
@@ -53,11 +55,12 @@ export async function NavUserData() {
               <li>
                 <NavigationMenuLink
                   render={
-                    <Link className='flex items-center' href='/user/history'>
+                    <Link href='/user/history'>
                       <HugeiconsIcon
                         icon={HistoryIcon}
                         color='currentColor'
                         strokeWidth={1.5}
+                        aria-hidden='true'
                       />
                       <span>History</span>
                     </Link>
@@ -70,6 +73,8 @@ export async function NavUserData() {
                     icon={LogoutCircle01Icon}
                     color='currentColor'
                     strokeWidth={1.5}
+                    data-icon='inline-start'
+                    aria-hidden='true'
                   />
                   <span>Log Out</span>
                 </Button>

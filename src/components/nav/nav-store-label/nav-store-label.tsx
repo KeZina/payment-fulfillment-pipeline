@@ -3,14 +3,16 @@ import {
   NavigationMenuLink,
 } from "@/components/ui/navigation-menu";
 import Link from "next/link";
+import { navStoreLabelStyles } from "./nav-store-label.styles";
 
 export function NavStoreLabel() {
   return (
     <NavigationMenuItem>
       <NavigationMenuLink
-        className='text-xl font-bold'
-        render={<Link href='/'>Store Name</Link>}
-      />
+        render={<Link href='/' />}
+      >
+        <span className={navStoreLabelStyles.label}>Store Name</span>
+      </NavigationMenuLink>
     </NavigationMenuItem>
   );
 }

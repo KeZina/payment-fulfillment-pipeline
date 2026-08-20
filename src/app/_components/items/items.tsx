@@ -2,12 +2,14 @@
 
 import { useInView } from "react-intersection-observer";
 import { useItemsInfiniteFetch } from "@/hooks/use-items-infinite-fetch";
-import { Item } from "@/types";
+import type { Item } from "@/types";
 import { ItemCard } from "../item-card";
 import { ITEMS_PLACEHOLDER } from "@/constants/placeholders";
 import { cn } from "@/lib";
+import { itemsStyles } from "./items.styles";
+import type { ItemsProps } from "./items.types";
 
-export function Items() {
+export function Items({ emptyState, errorState }: ItemsProps) {
   const { ref, inView } = useInView();
   const { error, items, isLoading, isRefreshing } = useItemsInfiniteFetch({
     inView,
@@ -31,31 +33,11 @@ export function Items() {
     <div
       aria-busy={isLoading || isRefreshing}
       className={cn(
-        "relative mx-auto flex h-64 w-full max-w-4xl flex-nowrap gap-4 overflow-x-auto px-4 py-4 sm:px-6",
+        itemsStyles.root,
         isRefreshing && "opacity-70",
       )}
     >
-      {hasError ? (
-        <div
-          className='flex h-full w-full flex-col items-center justify-center rounded-xl border border-dashed border-rose-200 bg-rose-50 px-6 text-center'
-          role='alert'
-        >
-          <p className='font-semibold text-rose-800'>Unable to load items</p>
-          <p className='mt-1 text-sm text-rose-600'>
-            Please try changing the search or filters.
-          </p>
-        </div>
-      ) : isEmpty ? (
-        <div
-          className='flex h-full w-full flex-col items-center justify-center rounded-xl border border-dashed border-slate-300 bg-slate-50 px-6 text-center'
-          role='status'
-        >
-          <p className='font-semibold text-slate-700'>No items found</p>
-          <p className='mt-1 text-sm text-slate-500'>
-            No items match your search or selected filters.
-          </p>
-        </div>
-      ) : cards}
+      {hasError ? errorState : isEmpty ? emptyState : cards}
     </div>
   );
 }

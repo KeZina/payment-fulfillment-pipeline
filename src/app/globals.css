@@ -127,5 +127,6 @@
   html {
     @apply font-sans;
     font-size: 20px;
+    scrollbar-gutter: stable;
   }
 }

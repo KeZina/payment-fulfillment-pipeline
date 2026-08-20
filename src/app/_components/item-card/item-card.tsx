@@ -2,8 +2,11 @@ import { cn } from "@/lib";
 import {
   foodIllustrationClasses,
   foodIllustrationPlaceholderClass,
+  itemCardClassName,
+  outOfStockItemCardClassName,
 } from "./item-card.styles";
-import { ItemCardProps } from "./item-card.types";
+import type { ItemCardProps } from "./item-card.types";
+import { AddToBasketButton } from "./add-to-basket-button";
 
 export function ItemCard({ item, isPlaceholder, ref }: ItemCardProps) {
   // Keep the accent varied while rendering the same class on the server and client.
@@ -19,10 +22,9 @@ export function ItemCard({ item, isPlaceholder, ref }: ItemCardProps) {
     <div
       ref={ref}
       className={cn(
-        "group flex h-full w-36 min-w-[9rem] flex-col justify-between rounded-xl border border-slate-200 bg-white p-3 shadow-sm transition-all duration-200 hover:z-10 hover:-translate-y-1 hover:rotate-[-3deg] hover:scale-[1.04] hover:shadow-md will-change-transform transform-gpu origin-center",
+        itemCardClassName,
         isPlaceholder && "opacity-50",
-        isOutOfStock &&
-          "bg-slate-50 opacity-70 hover:z-auto hover:translate-y-0 hover:rotate-0 hover:scale-100 hover:shadow-sm",
+        isOutOfStock && outOfStockItemCardClassName,
       )}
     >
       <div className='mb-3 overflow-hidden rounded-lg border border-slate-100 bg-slate-50'>
@@ -62,6 +64,10 @@ export function ItemCard({ item, isPlaceholder, ref }: ItemCardProps) {
         >
           ${Number(item.salePrice).toFixed(2)}
         </p>
+
+        {!isPlaceholder && !isOutOfStock ? (
+          <AddToBasketButton item={item} />
+        ) : null}
       </div>
     </div>
   );

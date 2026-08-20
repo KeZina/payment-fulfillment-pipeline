@@ -9,3 +9,4 @@ export type { ItemsSortFieldsValues } from "./items-sort-fields-values";
 export type { ItemsFilterFieldsValues } from "./items-filter-fields-values";
 export type { GetItemsPageParams } from "./params/get-items-page-params";
 export type { ItemsRequestQuery } from "./params/items-request-query";
+export type { BasketItem, BasketProduct } from "./basket";

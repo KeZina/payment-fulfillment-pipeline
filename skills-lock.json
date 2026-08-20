@@ -1,11 +1,47 @@
 {
   "version": 1,
   "skills": {
+    "next-cache-components-adoption": {
+      "source": "vercel/next.js",
+      "sourceType": "github",
+      "skillPath": "skills/next-cache-components-adoption/SKILL.md",
+      "computedHash": "a66447c52ddb998ee78eb7f9867b5287c461c5c4316ee70b0d7836eea91c5b21"
+    },
+    "next-cache-components-optimizer": {
+      "source": "vercel/next.js",
+      "sourceType": "github",
+      "skillPath": "skills/next-cache-components-optimizer/SKILL.md",
+      "computedHash": "a45e680bcb933982e8d71e3b3f45b500ab1edc1aa94b1fbd95d8601776e19bed"
+    },
+    "next-dev-loop": {
+      "source": "vercel/next.js",
+      "sourceType": "github",
+      "skillPath": "skills/next-dev-loop/SKILL.md",
+      "computedHash": "d2a697a0a0429cad0bb7264644115457f588d4ed1007eeb0bb7f965b1185fa6e"
+    },
+    "next-partial-prefetching-adoption": {
+      "source": "vercel/next.js",
+      "sourceType": "github",
+      "skillPath": "skills/next-partial-prefetching-adoption/SKILL.md",
+      "computedHash": "3c87fe3811eb23d63ad5d7de148e15400ad2a0b4f5d7785195e5fbd7acd5e3a7"
+    },
+    "shadcn": {
+      "source": "shadcn/ui",
+      "sourceType": "github",
+      "skillPath": "skills/shadcn/SKILL.md",
+      "computedHash": "f99ef49d9909d380ca683ceb8dc8c25775c20ee38140112c394e037d8c11ee18"
+    },
     "valibot": {
       "source": "open-circle/agent-skills",
       "sourceType": "github",
       "skillPath": "skills/valibot/SKILL.md",
       "computedHash": "31d519d234d3af2cb44fb777f613abf9c187959791af172221af7d0b7af6e892"
+    },
+    "zustand": {
+      "source": "lobehub/lobe-chat",
+      "sourceType": "github",
+      "skillPath": ".agents/skills/zustand/SKILL.md",
+      "computedHash": "a30e48757fc553094deb207307474391cb54152010aa9af1baf078c22c679d7d"
     }
   }
 }
