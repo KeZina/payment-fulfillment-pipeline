@@ -19,6 +19,7 @@
     "@tanstack/react-form": "^1.33.5",
     "axios": "^1.19.0",
     "better-auth": "^1.7.0",
+    "braintree": "^3.39.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "drizzle-orm": "^0.45.2",

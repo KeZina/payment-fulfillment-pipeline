@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -33,17 +34,18 @@ export function BasketSummary({ subtotal }: BasketSummaryProps) {
           </div>
           <Separator className={basketSummaryStyles.separator} />
           <CardDescription className={basketSummaryStyles.description}>
-            Inventory is reserved only after checkout. Checkout will be added
-            in the next step.
+            Review your delivery details and order before payment. Inventory
+            is not reserved yet.
           </CardDescription>
         </CardContent>
         <CardFooter>
           <Button
-            type='button'
+            size='lg'
             className={basketSummaryStyles.checkout}
-            disabled
+            nativeButton={false}
+            render={<Link href='/user/checkout' />}
           >
-            Checkout coming soon
+            Go to checkout
           </Button>
         </CardFooter>
       </Card>
