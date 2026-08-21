@@ -48,7 +48,7 @@ export function SignUpForm() {
   return (
     <Card className='w-full sm:max-w-md'>
       <CardHeader>
-        <CardTitle>Login</CardTitle>
+        <CardTitle>Sign Up</CardTitle>
         <CardDescription>
           Already have an account?{" "}
           <Link className='text-black hover:underline' href='/sign-in'>
@@ -73,6 +73,7 @@ export function SignUpForm() {
                     <Input
                       id={field.name}
                       name={field.name}
+                      type="email"
                       value={field.state.value}
                       onBlur={field.handleBlur}
                       onChange={(e) => field.handleChange(e.target.value)}
@@ -113,6 +114,7 @@ export function SignUpForm() {
                     <Input
                       id={field.name}
                       name={field.name}
+                      type="password"
                       value={field.state.value}
                       onBlur={field.handleBlur}
                       onChange={(e) => field.handleChange(e.target.value)}

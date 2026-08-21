@@ -3,10 +3,9 @@
 import { useSyncExternalStore } from "react";
 import { Badge } from "@/components/ui/badge";
 import { useBasketStore } from "@/stores/basket-store";
-import { CheckoutDetailsForm } from "../checkout-details-form";
 import { CheckoutEmptyState } from "../checkout-empty-state";
+import { CheckoutForm } from "../checkout-form";
 import { CheckoutOrderSummary } from "../checkout-order-summary";
-import { CheckoutPaymentPlaceholder } from "../checkout-payment-placeholder";
 import { checkoutViewStyles } from "./checkout-view.styles";
 
 const subscribeToClientHydration = () => () => undefined;
@@ -32,7 +31,10 @@ export function CheckoutView() {
         </p>
         <div className={checkoutViewStyles.notice} role='status'>
           <Badge variant='secondary'>Sandbox only</Badge>
-          <span>No real money will be charged. Payment is not connected yet.</span>
+          <span>
+            The gateway is locked to Braintree Sandbox. No real money can be
+            charged.
+          </span>
         </div>
       </header>
 
@@ -45,8 +47,7 @@ export function CheckoutView() {
       ) : (
         <div className={checkoutViewStyles.grid}>
           <div className={checkoutViewStyles.mainColumn}>
-            <CheckoutDetailsForm />
-            <CheckoutPaymentPlaceholder />
+            <CheckoutForm items={items} />
           </div>
           <CheckoutOrderSummary items={items} />
         </div>

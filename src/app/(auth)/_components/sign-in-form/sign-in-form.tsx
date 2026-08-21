@@ -47,7 +47,7 @@ export function SignInForm() {
   return (
     <Card className='w-full sm:max-w-md'>
       <CardHeader>
-        <CardTitle>Login</CardTitle>
+        <CardTitle>Sign In</CardTitle>
         <CardDescription>
           Do not have an account?{" "}
           <Link className='text-black hover:underline' href='/sign-up'>

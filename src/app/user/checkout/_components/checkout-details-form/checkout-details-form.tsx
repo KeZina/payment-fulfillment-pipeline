@@ -23,10 +23,14 @@ import { Textarea } from "@/components/ui/textarea";
 import { CheckoutDetailsSchema } from "@/schemas";
 import { checkIfFormFieldInvalid } from "@/utils/client";
 import { checkoutDetailsFormStyles } from "./checkout-details-form.styles";
+import type { CheckoutDetailsFormProps } from "./checkout-details-form.types";
 
 export const CHECKOUT_DETAILS_FORM_ID = "checkout-details-form";
 
-export function CheckoutDetailsForm() {
+export function CheckoutDetailsForm({
+  isDisabled,
+  onSubmit,
+}: CheckoutDetailsFormProps) {
   const form = useForm({
     defaultValues: {
       fullName: "",
@@ -39,7 +43,7 @@ export function CheckoutDetailsForm() {
       onBlur: CheckoutDetailsSchema,
       onSubmit: CheckoutDetailsSchema,
     },
-    onSubmit: async () => undefined,
+    onSubmit: async ({ value }) => onSubmit(value),
   });
 
   return (
@@ -60,11 +64,11 @@ export function CheckoutDetailsForm() {
           noValidate
           onSubmit={(event) => {
             event.preventDefault();
-            form.handleSubmit();
+            void form.handleSubmit();
           }}
         >
           <FieldGroup>
-            <FieldSet>
+            <FieldSet data-disabled={isDisabled} disabled={isDisabled}>
               <FieldLegend>Contact</FieldLegend>
               <FieldDescription>
                 Used only for updates about this order.
@@ -181,7 +185,7 @@ export function CheckoutDetailsForm() {
               </FieldGroup>
             </FieldSet>
 
-            <FieldSet>
+            <FieldSet data-disabled={isDisabled} disabled={isDisabled}>
               <FieldLegend>Delivery</FieldLegend>
               <FieldGroup className={checkoutDetailsFormStyles.fields}>
                 <form.Field name='deliveryAddress'>
@@ -268,7 +272,7 @@ export function CheckoutDetailsForm() {
         </form>
       </CardContent>
       <CardFooter className={checkoutDetailsFormStyles.footer}>
-        Nothing entered here is sent or saved in this step.
+        Details are validated for this sandbox checkout but are not stored yet.
       </CardFooter>
     </Card>
   );
