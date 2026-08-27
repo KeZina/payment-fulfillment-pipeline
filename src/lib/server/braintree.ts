@@ -1,18 +1,19 @@
 import "server-only";
 
 import braintree from "braintree";
+import { SANDBOX_ENVIRONMENT } from "@/constants";
 
 let sandboxGateway: braintree.BraintreeGateway | null = null;
 
-export function getBraintreeSandboxMerchantAccountId() {
-  if (process.env.BRAINTREE_ENVIRONMENT !== "Sandbox") {
+export function getSandboxMerchantAccountId() {
+  if (process.env.BRAINTREE_ENVIRONMENT !== SANDBOX_ENVIRONMENT) {
     throw new Error("Braintree Sandbox is not configured.");
   }
 
   return process.env.BRAINTREE_MERCHANT_ACCOUNT_ID;
 }
 
-export function getBraintreeSandboxGateway() {
+export function getSandboxGateway() {
   if (sandboxGateway) {
     return sandboxGateway;
   }
@@ -22,7 +23,7 @@ export function getBraintreeSandboxGateway() {
   const privateKey = process.env.BRAINTREE_PRIVATE_KEY;
 
   if (
-    process.env.BRAINTREE_ENVIRONMENT !== "Sandbox" ||
+    process.env.BRAINTREE_ENVIRONMENT !== SANDBOX_ENVIRONMENT ||
     !merchantId ||
     !publicKey ||
     !privateKey
@@ -38,4 +39,15 @@ export function getBraintreeSandboxGateway() {
   });
 
   return sandboxGateway;
+}
+
+export function getConfiguredSandboxGateway() {
+  try {
+    return {
+      gateway: getSandboxGateway(),
+      merchantAccountId: getSandboxMerchantAccountId(),
+    };
+  } catch {
+    return null;
+  }
 }

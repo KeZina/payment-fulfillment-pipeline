@@ -1,28 +1,30 @@
+import type { CheckoutPaymentInitializationStateValue } from "@/constants";
+import { CheckoutPaymentFeedbackKind } from "@/constants";
+import type { GetCheckoutPaymentButtonLabelParams } from "@/constants/checkout-payment";
+
+export type { GetCheckoutPaymentButtonLabelParams };
+
+export type { CheckoutHostedFieldsOptions } from "@/types/hosted-fields-session";
+
 export type CheckoutPaymentFieldName =
   | "number"
   | "expirationDate"
   | "cvv"
   | "postalCode";
 
-export type CheckoutHostedFieldsOptions = Parameters<
-  typeof import("braintree-web/hosted-fields").create
->[0] & { preventAutofill: boolean };
-
 export type CheckoutPaymentInitializationState =
-  | "loading"
-  | "ready"
-  | "error";
+  CheckoutPaymentInitializationStateValue;
 
 export type CheckoutPaymentFeedback =
   | {
-      kind: "success";
+      kind: typeof CheckoutPaymentFeedbackKind.Success;
       transactionId: string;
       status: string;
       amount: string;
       currency: string;
     }
-  | { kind: "error"; message: string }
-  | { kind: "unknown"; message: string }
+  | { kind: typeof CheckoutPaymentFeedbackKind.Error; message: string }
+  | { kind: typeof CheckoutPaymentFeedbackKind.Unknown; message: string }
   | null;
 
 export type CheckoutPaymentHandle = {

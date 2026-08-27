@@ -1,32 +1,14 @@
 import {
   auth,
-  getBraintreeSandboxGateway,
-  getBraintreeSandboxMerchantAccountId,
+  getConfiguredSandboxGateway,
+  clientTokenErrorResponse,
+  clientTokenSuccessResponse,
 } from "@/lib/server";
 import { isSameOriginRequest } from "@/utils/server";
 
-const NO_STORE_HEADERS = { //TODO move the constant to the constants folder
-  "Cache-Control": "private, no-store, max-age=0",
-  Vary: "Cookie",
-} as const;
-
-function getConfiguredSandboxGateway() {
-  try {
-    return {
-      gateway: getBraintreeSandboxGateway(),
-      merchantAccountId: getBraintreeSandboxMerchantAccountId(),
-    };
-  } catch {
-    return null;
-  }
-}
-
 export async function POST(request: Request) {
   if (!isSameOriginRequest(request)) {
-    return Response.json(
-      { error: "Invalid request origin." },
-      { status: 403, headers: NO_STORE_HEADERS },
-    );
+    return clientTokenErrorResponse("Invalid request origin.", 403);
   }
 
   const sessionResult = await auth.api
@@ -35,25 +17,22 @@ export async function POST(request: Request) {
     .catch(() => null);
 
   if (!sessionResult) {
-    return Response.json(
-      { error: "Braintree Sandbox is temporarily unavailable." },
-      { status: 503, headers: NO_STORE_HEADERS },
+    return clientTokenErrorResponse(
+      "Braintree Sandbox is temporarily unavailable.",
+      503,
     );
   }
 
   if (!sessionResult.session) {
-    return Response.json(
-      { error: "Authentication is required." },
-      { status: 401, headers: NO_STORE_HEADERS },
-    );
+    return clientTokenErrorResponse("Authentication is required.", 401);
   }
 
   const configuration = getConfiguredSandboxGateway();
 
   if (!configuration) {
-    return Response.json(
-      { error: "Braintree Sandbox is not configured." },
-      { status: 503, headers: NO_STORE_HEADERS },
+    return clientTokenErrorResponse(
+      "Braintree Sandbox is not configured.",
+      503,
     );
   }
 
@@ -65,20 +44,17 @@ export async function POST(request: Request) {
     );
 
     if (!result.success || !result.clientToken) {
-      return Response.json(
-        { error: "Braintree Sandbox could not create a client token." },
-        { status: 502, headers: NO_STORE_HEADERS },
+      return clientTokenErrorResponse(
+        "Braintree Sandbox could not create a client token.",
+        502,
       );
     }
 
-    return Response.json(
-      { clientToken: result.clientToken, sandbox: true },
-      { headers: NO_STORE_HEADERS },
-    );
+    return clientTokenSuccessResponse(result.clientToken);
   } catch {
-    return Response.json(
-      { error: "Braintree Sandbox could not create a client token." },
-      { status: 502, headers: NO_STORE_HEADERS },
+    return clientTokenErrorResponse(
+      "Braintree Sandbox could not create a client token.",
+      502,
     );
   }
 }

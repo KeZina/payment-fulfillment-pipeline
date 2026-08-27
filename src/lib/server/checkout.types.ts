@@ -1,4 +1,5 @@
 import type { CheckoutLineItem } from "@/types";
+import { SandboxCheckoutLedgerStatus } from "@/constants";
 
 export type SandboxTransactionSnapshot = {
   id: string;
@@ -8,11 +9,11 @@ export type SandboxTransactionSnapshot = {
 };
 
 export type SandboxCheckoutLedgerState =
-  | { status: "missing" }
-  | { status: "conflict" }
-  | { status: "unfulfilled" }
+  | { status: typeof SandboxCheckoutLedgerStatus.Missing }
+  | { status: typeof SandboxCheckoutLedgerStatus.Conflict }
+  | { status: typeof SandboxCheckoutLedgerStatus.Unfulfilled }
   | {
-      status: "fulfilled";
+      status: typeof SandboxCheckoutLedgerStatus.Fulfilled;
       transaction: SandboxTransactionSnapshot;
     };
 

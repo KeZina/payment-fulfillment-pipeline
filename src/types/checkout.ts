@@ -1,9 +1,9 @@
 import type * as v from "valibot";
 import type {
-  BraintreeCheckoutRequestSchema,
-  BraintreeCheckoutResponseSchema,
-  BraintreeClientTokenResponseSchema,
-  BraintreeSandboxAttemptSchema,
+  CheckoutRequestSchema,
+  CheckoutResponseSchema,
+  ClientTokenResponseSchema,
+  SandboxAttemptSchema,
   CheckoutDetailsSchema,
   CheckoutLineItemSchema,
 } from "@/schemas/checkout";
@@ -12,26 +12,20 @@ export type CheckoutDetails = v.InferOutput<typeof CheckoutDetailsSchema>;
 
 export type CheckoutLineItem = v.InferOutput<typeof CheckoutLineItemSchema>;
 
-export type BraintreeCheckoutRequest = v.InferOutput<
-  typeof BraintreeCheckoutRequestSchema
+export type CheckoutRequest = v.InferOutput<typeof CheckoutRequestSchema>;
+
+export type ClientTokenResponse = v.InferOutput<
+  typeof ClientTokenResponseSchema
 >;
 
-export type BraintreeClientTokenResponse = v.InferOutput<
-  typeof BraintreeClientTokenResponseSchema
->;
+export type CheckoutResponse = v.InferOutput<typeof CheckoutResponseSchema>;
 
-export type BraintreeCheckoutResponse = v.InferOutput<
-  typeof BraintreeCheckoutResponseSchema
->;
-
-export type BraintreeCheckoutSuccessResponse = Extract<
-  BraintreeCheckoutResponse,
+export type CheckoutSuccessResponse = Extract<
+  CheckoutResponse,
   { success: true }
 >;
 
-export type BraintreeSandboxAttempt = v.InferOutput<
-  typeof BraintreeSandboxAttemptSchema
->;
+export type SandboxAttempt = v.InferOutput<typeof SandboxAttemptSchema>;
 
 export type CheckoutQuoteResult =
   | { success: true; amount: string }

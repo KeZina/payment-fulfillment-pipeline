@@ -187,8 +187,6 @@ successful checkout.
 - The basket is local to one browser rather than synchronized to a user account.
 - Product artwork is currently illustrative placeholder UI.
 - Automated tests and continuous integration are not set up yet.
-- The current TypeScript 7 and typescript-eslint combination prevents the lint
-  command from starting until the tooling versions are aligned.
 
 ## Project structure
 

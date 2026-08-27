@@ -3,6 +3,8 @@ import "server-only";
 import { eq, inArray, sql } from "drizzle-orm";
 import { db } from "@/db";
 import { braintreeSandboxTransaction, item } from "@/db/schemas";
+import { MONEY_AMOUNT_CAPTURE_REGEX } from "@/schemas/shared";
+import { SandboxCheckoutLedgerStatus } from "@/constants";
 import type { CheckoutLineItem, CheckoutQuoteResult } from "@/types";
 import type {
   GetSandboxCheckoutLedgerStateParams,
@@ -15,15 +17,15 @@ const CENTS_PER_UNIT = BigInt(100);
 const ZERO_CENTS = BigInt(0);
 
 function priceToCents(price: string) {
-  const match = /^(\d+)(?:\.(\d{1,2}))?$/.exec(price);
+  const match = MONEY_AMOUNT_CAPTURE_REGEX.exec(price);
 
   if (!match) {
     return null;
   }
 
-  const [, whole, fraction = ""] = match;
+  const [, whole, fraction] = match;
 
-  return BigInt(whole) * CENTS_PER_UNIT + BigInt(fraction.padEnd(2, "0"));
+  return BigInt(whole) * CENTS_PER_UNIT + BigInt(fraction);
 }
 
 function formatCents(cents: bigint) {
@@ -65,22 +67,22 @@ export async function getSandboxCheckoutLedgerState({
     .limit(1);
 
   if (!transaction) {
-    return { status: "missing" };
+    return { status: SandboxCheckoutLedgerStatus.Missing };
   }
 
   if (
     transaction.userId !== userId ||
     transaction.requestFingerprint !== requestFingerprint
   ) {
-    return { status: "conflict" };
+    return { status: SandboxCheckoutLedgerStatus.Conflict };
   }
 
   if (!transaction.inventoryApplied) {
-    return { status: "unfulfilled" };
+    return { status: SandboxCheckoutLedgerStatus.Unfulfilled };
   }
 
   return {
-    status: "fulfilled",
+    status: SandboxCheckoutLedgerStatus.Fulfilled,
     transaction: {
       id: transaction.id,
       status: transaction.status,
@@ -116,7 +118,7 @@ export async function recordSuccessfulSandboxCheckout({
     userId,
   });
 
-  if (ledgerState.status !== "unfulfilled") {
+  if (ledgerState.status !== SandboxCheckoutLedgerStatus.Unfulfilled) {
     return ledgerState;
   }
 

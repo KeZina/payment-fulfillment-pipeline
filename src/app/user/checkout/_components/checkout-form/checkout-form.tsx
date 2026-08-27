@@ -1,9 +1,14 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import * as v from "valibot";
+import { useRef, useState, useSyncExternalStore } from "react";
+import { useCheckoutSubmit } from "@/hooks/use-checkout-submit";
+import {
+  ApplyCheckoutResponseKind,
+  CHECKOUT_FORM_COPY,
+  CheckoutPaymentFeedbackKind,
+  SandboxAttemptStatus,
+} from "@/constants";
 import { auth } from "@/lib/client";
-import { BraintreeCheckoutResponseSchema } from "@/schemas";
 import { useBasketStore } from "@/stores/basket-store";
 import type { CheckoutDetails } from "@/types";
 import {
@@ -15,20 +20,77 @@ import {
   type CheckoutPaymentFeedback,
   type CheckoutPaymentHandle,
 } from "../checkout-payment";
-import type { CheckoutFormProps } from "./checkout-form.types";
 import {
+  applyCheckoutResponse,
   clearStoredAttempt,
   createBasketFingerprint,
-  getAttemptStorageKey,
+  createPendingCheckoutAttempt,
+  getExistingAttemptFeedback,
+  getStoredAttemptFeedback,
   readStoredAttempt,
   storeAttempt,
-} from "./checkout-form.storage";
+  subscribeToStoredAttemptChanges,
+  subscribeToStoredAttemptStorageEvents,
+} from "@/utils/client";
+import type {
+  CheckoutFeedbackState,
+  CheckoutFormProps,
+} from "./checkout-form.types";
 
-const UNKNOWN_STATUS_MESSAGE =
-  "The sandbox result could not be confirmed. Check the Braintree Sandbox Control Panel before trying again.";
+const SIGN_IN_FEEDBACK: CheckoutPaymentFeedback = {
+  kind: CheckoutPaymentFeedbackKind.Error,
+  message: CHECKOUT_FORM_COPY.signInRequired,
+};
 
-// TODO logic has to be more explicit and descriptive, constants ought to be placed into constants folder
+function useStoredAttemptFeedback(
+  userId: string | undefined,
+  basketFingerprint: string,
+) {
+  const snapshotCacheRef = useRef<{
+    signature: string;
+    snapshot: CheckoutPaymentFeedback;
+  } | null>(null);
+
+  function getSnapshot() {
+    if (!userId) {
+      return null;
+    }
+
+    const attempt = readStoredAttempt(userId, basketFingerprint);
+    const signature = `${userId}:${basketFingerprint}:${
+      attempt ? JSON.stringify(attempt) : ""
+    }`;
+    const cache = snapshotCacheRef.current;
+
+    if (cache?.signature === signature) {
+      return cache.snapshot;
+    }
+
+    const snapshot = getStoredAttemptFeedback(userId, basketFingerprint);
+    snapshotCacheRef.current = { signature, snapshot };
+
+    return snapshot;
+  }
+
+  return useSyncExternalStore(
+    (onStoreChange) => {
+      const unsubscribeLocal = subscribeToStoredAttemptChanges(onStoreChange);
+      const unsubscribeStorage = userId
+        ? subscribeToStoredAttemptStorageEvents(userId, onStoreChange)
+        : () => undefined;
+
+      return () => {
+        unsubscribeLocal();
+        unsubscribeStorage();
+      };
+    },
+    getSnapshot,
+    () => null,
+  );
+}
+
 export function CheckoutForm({ items }: CheckoutFormProps) {
+  const { submitCheckout } = useCheckoutSubmit();
   const { data: session, isPending: isSessionPending } = auth.useSession();
   const { clearBasket } = useBasketStore();
   const userId = session?.user.id;
@@ -37,240 +99,152 @@ export function CheckoutForm({ items }: CheckoutFormProps) {
   const [isPaymentReady, setIsPaymentReady] = useState(false);
   const [isPaymentValid, setIsPaymentValid] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [feedback, setFeedback] = useState<CheckoutPaymentFeedback>(null);
-  const basketFingerprint = useMemo(
-    () => createBasketFingerprint(items),
-    [items],
+  const [checkoutFeedbackState, setCheckoutFeedbackState] =
+    useState<CheckoutFeedbackState | null>(null);
+  const basketFingerprint = createBasketFingerprint(items);
+  const storedAttemptFeedback = useStoredAttemptFeedback(
+    userId,
+    basketFingerprint,
   );
+  const checkoutFeedback =
+    checkoutFeedbackState?.basketFingerprint === basketFingerprint
+      ? checkoutFeedbackState.feedback
+      : null;
+  const sessionFeedback =
+    !userId && !isSessionPending ? SIGN_IN_FEEDBACK : null;
+  const settledFeedback =
+    checkoutFeedback ?? storedAttemptFeedback ?? sessionFeedback;
+  // While a submission is in flight, the settled feedback sources (local
+  // state, stored attempt, session) can briefly reflect an intermediate or
+  // stale value. The loading state is authoritative here: never show a
+  // result banner alongside the "Processing…" button.
+  const feedback = isSubmitting ? null : settledFeedback;
 
-  useEffect(() => {
-    if (!userId) {
-      setFeedback(
-        isSessionPending
-          ? null
-          : {
-              kind: "error",
-              message: "Sign in again before using the sandbox checkout.",
-            },
-      );
+  function setCheckoutFeedback(nextFeedback: CheckoutPaymentFeedback) {
+    setCheckoutFeedbackState(
+      nextFeedback === null
+        ? null
+        : { basketFingerprint, feedback: nextFeedback },
+    );
+  }
+
+  function handleReadyChange(isReady: boolean) {
+    setIsPaymentReady(isReady);
+  }
+
+  function handleValidityChange(isValid: boolean) {
+    setIsPaymentValid(isValid);
+  }
+
+  async function handleSubmit(checkoutDetails: CheckoutDetails) {
+    if (isRequestInFlightRef.current) {
       return;
     }
 
-    const attemptUserId = userId;
-    const attemptStorageKey = getAttemptStorageKey(attemptUserId);
-
-    function restoreAttempt() {
-      const attempt = readStoredAttempt(attemptUserId, basketFingerprint);
-
-      if (!attempt) {
-        setFeedback(null);
-        return;
-      }
-
-      if (attempt.status === "success") {
-        setFeedback({
-          kind: "success",
-          transactionId: attempt.transaction.id,
-          status: attempt.transaction.status,
-          amount: attempt.transaction.amount,
-          currency: attempt.transaction.currency,
-        });
-        return;
-      }
-
-      setFeedback({ kind: "unknown", message: UNKNOWN_STATUS_MESSAGE });
+    if (!userId) {
+      setCheckoutFeedback(SIGN_IN_FEEDBACK);
+      return;
     }
 
-    function handleStorageChange(event: StorageEvent) {
-      if (event.key === attemptStorageKey) {
-        restoreAttempt();
-      }
-    }
-
-    restoreAttempt();
-    window.addEventListener("storage", handleStorageChange);
-
-    return () => window.removeEventListener("storage", handleStorageChange);
-  }, [basketFingerprint, isSessionPending, userId]);
-
-  const handleReadyChange = useCallback((isReady: boolean) => {
-    setIsPaymentReady(isReady);
-  }, []);
-
-  const handleValidityChange = useCallback((isValid: boolean) => {
-    setIsPaymentValid(isValid);
-  }, []);
-
-  const handleSubmit = useCallback(
-    async (checkoutDetails: CheckoutDetails) => {
-      if (isRequestInFlightRef.current) {
-        return;
-      }
-
-      if (!userId) {
-        setFeedback({
-          kind: "error",
-          message: "Sign in again before using the sandbox checkout.",
-        });
-        return;
-      }
-
-      const existingAttempt = readStoredAttempt(userId, basketFingerprint);
-
-      if (existingAttempt) {
-        if (existingAttempt.status === "success") {
-          setFeedback({
-            kind: "success",
-            transactionId: existingAttempt.transaction.id,
-            status: existingAttempt.transaction.status,
-            amount: existingAttempt.transaction.amount,
-            currency: existingAttempt.transaction.currency,
-          });
-        } else {
-          setFeedback({ kind: "unknown", message: UNKNOWN_STATUS_MESSAGE });
-        }
-
-        return;
-      }
-
-      const payment = paymentRef.current;
-
-      if (!payment || !isPaymentReady || !isPaymentValid) {
-        setFeedback({
-          kind: "error",
-          message: "Complete the secure sandbox card fields before submitting.",
-        });
-        return;
-      }
-
-      isRequestInFlightRef.current = true;
-      setIsSubmitting(true);
-      setFeedback(null);
-      let didStartCheckoutRequest = false;
-      const idempotencyKey = crypto.randomUUID();
-      const pendingAttempt = {
-        version: 1,
-        basketFingerprint,
-        idempotencyKey,
-        status: "pending",
-      } as const;
-
-      if (!storeAttempt(userId, pendingAttempt)) {
-        isRequestInFlightRef.current = false;
-        setIsSubmitting(false);
-        setFeedback({
-          kind: "error",
-          message:
-            "The browser could not save the sandbox retry guard. Enable local storage before trying again.",
-        });
-        return;
-      }
-
-      try {
-        const paymentMethodNonce = await payment.tokenize();
-        const expectedAmount = items
-          .reduce(
-            (total, item) =>
-              total + Number(item.salePrice) * item.quantity,
-            0,
-          )
-          .toFixed(2);
-        didStartCheckoutRequest = true;
-
-        const response = await fetch("/api/braintree/checkout", {
-          method: "POST",
-          cache: "no-store",
-          credentials: "same-origin",
-          headers: {
-            Accept: "application/json",
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            items: items.map(({ id, quantity }) => ({ id, quantity })),
-            checkoutDetails,
-            expectedAmount,
-            paymentMethodNonce,
-            idempotencyKey,
-          }),
-        });
-
-        const responseBody: unknown = await response.json();
-        const parsedResponse = v.safeParse(
-          BraintreeCheckoutResponseSchema,
-          responseBody,
-        );
-
-        if (!parsedResponse.success) {
-          storeAttempt(userId, { ...pendingAttempt, status: "unknown" });
-          setFeedback({ kind: "unknown", message: UNKNOWN_STATUS_MESSAGE });
-          return;
-        }
-
-        if (parsedResponse.output.success) {
-          clearStoredAttempt(userId);
-          payment.clear();
-          clearBasket();
-          window.location.replace("/");
-          return;
-        }
-
-        if (parsedResponse.output.code === "PAYMENT_STATUS_UNKNOWN") {
-          storeAttempt(userId, { ...pendingAttempt, status: "unknown" });
-          setFeedback({
-            kind: "unknown",
-            message: parsedResponse.output.message,
-          });
-          return;
-        }
-
-        clearStoredAttempt(userId);
-        payment.clear();
-        setFeedback({
-          kind: "error",
-          message: parsedResponse.output.message,
-        });
-      } catch {
-        if (didStartCheckoutRequest) {
-          storeAttempt(userId, { ...pendingAttempt, status: "unknown" });
-          setFeedback({ kind: "unknown", message: UNKNOWN_STATUS_MESSAGE });
-        } else {
-          clearStoredAttempt(userId);
-          setFeedback({
-            kind: "error",
-            message:
-              "The sandbox card details could not be secured. Review them and try again.",
-          });
-        }
-      } finally {
-        isRequestInFlightRef.current = false;
-        setIsSubmitting(false);
-      }
-    },
-    [
-      basketFingerprint,
-      clearBasket,
-      isPaymentReady,
-      isPaymentValid,
-      items,
+    const existingAttemptFeedback = getExistingAttemptFeedback(
       userId,
-    ],
-  );
+      basketFingerprint,
+    );
 
-  const handleResetAttempt = useCallback(() => {
+    if (existingAttemptFeedback) {
+      setCheckoutFeedback(existingAttemptFeedback);
+      return;
+    }
+
+    const payment = paymentRef.current;
+
+    if (!payment || !isPaymentReady || !isPaymentValid) {
+      setCheckoutFeedback({
+        kind: CheckoutPaymentFeedbackKind.Error,
+        message: CHECKOUT_FORM_COPY.completeCardFields,
+      });
+      return;
+    }
+
+    isRequestInFlightRef.current = true;
+    setIsSubmitting(true);
+    setCheckoutFeedback(null);
+    let didStartCheckoutRequest = false;
+    const idempotencyKey = crypto.randomUUID();
+    const pendingAttempt = createPendingCheckoutAttempt(items, idempotencyKey);
+
+    if (!storeAttempt(userId, pendingAttempt)) {
+      isRequestInFlightRef.current = false;
+      setIsSubmitting(false);
+      setCheckoutFeedback({
+        kind: CheckoutPaymentFeedbackKind.Error,
+        message: CHECKOUT_FORM_COPY.retryGuardStorageFailed,
+      });
+      return;
+    }
+
+    try {
+      const paymentMethodNonce = await payment.tokenize();
+      didStartCheckoutRequest = true;
+
+      const response = await submitCheckout({
+        checkoutDetails,
+        idempotencyKey,
+        items,
+        paymentMethodNonce,
+      });
+      const result = applyCheckoutResponse({
+        clearBasket,
+        clearPaymentFields: () => payment.clear(),
+        pendingAttempt,
+        response,
+        userId,
+      });
+
+      if (result.kind === ApplyCheckoutResponseKind.Redirect) {
+        window.location.replace("/");
+        return;
+      }
+
+      setCheckoutFeedback(result.feedback);
+    } catch {
+      if (didStartCheckoutRequest) {
+        storeAttempt(userId, {
+          ...pendingAttempt,
+          status: SandboxAttemptStatus.Unknown,
+        });
+        setCheckoutFeedback({
+          kind: CheckoutPaymentFeedbackKind.Unknown,
+          message: CHECKOUT_FORM_COPY.unknownStatus,
+        });
+      } else {
+        clearStoredAttempt(userId);
+        setCheckoutFeedback({
+          kind: CheckoutPaymentFeedbackKind.Error,
+          message: CHECKOUT_FORM_COPY.tokenizeFailed,
+        });
+      }
+    } finally {
+      isRequestInFlightRef.current = false;
+      setIsSubmitting(false);
+    }
+  }
+
+  function handleResetAttempt() {
     if (!userId) {
       return;
     }
 
     clearStoredAttempt(userId);
     paymentRef.current?.clear();
-    setFeedback(null);
-  }, [userId]);
+    setCheckoutFeedback(null);
+  }
 
   const isLocked =
     isSessionPending ||
     !userId ||
-    feedback?.kind === "success" ||
-    feedback?.kind === "unknown";
+    feedback?.kind === CheckoutPaymentFeedbackKind.Success ||
+    feedback?.kind === CheckoutPaymentFeedbackKind.Unknown;
 
   return (
     <>

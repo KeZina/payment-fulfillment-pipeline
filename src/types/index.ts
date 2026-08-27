@@ -11,12 +11,16 @@ export type { GetItemsPageParams } from "./params/get-items-page-params";
 export type { ItemsRequestQuery } from "./params/items-request-query";
 export type { BasketItem, BasketProduct } from "./basket";
 export type {
-  BraintreeCheckoutRequest,
-  BraintreeCheckoutResponse,
-  BraintreeCheckoutSuccessResponse,
-  BraintreeClientTokenResponse,
-  BraintreeSandboxAttempt,
+  CheckoutRequest,
+  CheckoutResponse,
+  CheckoutSuccessResponse,
+  ClientTokenResponse,
+  SandboxAttempt,
   CheckoutDetails,
   CheckoutLineItem,
   CheckoutQuoteResult,
 } from "./checkout";
+export type {
+  CheckoutHostedFieldsOptions,
+  HostedFieldsSessionState,
+} from "./hosted-fields-session";

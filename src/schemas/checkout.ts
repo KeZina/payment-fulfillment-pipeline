@@ -1,4 +1,10 @@
 import * as v from "valibot";
+import { CHECKOUT_ERROR_CODES, SandboxAttemptStatus } from "@/constants";
+import {
+  MoneyAmountSchema,
+  MONEY_AMOUNT_REGEX,
+  PositiveIntegerSchema,
+} from "./shared";
 
 export const CheckoutDetailsSchema = v.object({
   fullName: v.pipe(
@@ -37,12 +43,6 @@ export const CheckoutDetailsSchema = v.object({
   ),
 });
 
-const PositiveIntegerSchema = v.pipe(
-  v.number(),
-  v.safeInteger(),
-  v.minValue(1),
-);
-
 export const CheckoutLineItemSchema = v.strictObject({
   id: PositiveIntegerSchema,
   quantity: v.pipe(PositiveIntegerSchema, v.maxValue(99)),
@@ -58,14 +58,10 @@ const CheckoutLineItemsSchema = v.pipe(
   ),
 );
 
-export const BraintreeCheckoutRequestSchema = v.strictObject({
+export const CheckoutRequestSchema = v.strictObject({
   items: CheckoutLineItemsSchema,
   checkoutDetails: CheckoutDetailsSchema,
-  expectedAmount: v.pipe(
-    v.string(),
-    v.maxLength(20),
-    v.regex(/^\d+\.\d{2}$/),
-  ),
+  expectedAmount: MoneyAmountSchema,
   paymentMethodNonce: v.pipe(
     v.string(),
     v.nonEmpty(),
@@ -74,47 +70,38 @@ export const BraintreeCheckoutRequestSchema = v.strictObject({
   idempotencyKey: v.pipe(v.string(), v.uuid()),
 });
 
-export const BraintreeClientTokenResponseSchema = v.strictObject({
+export const ClientTokenResponseSchema = v.strictObject({
   clientToken: v.pipe(v.string(), v.nonEmpty(), v.maxLength(8192)),
   sandbox: v.literal(true),
 });
 
-const BraintreeTransactionSchema = v.strictObject({
+const CheckoutTransactionSchema = v.strictObject({
   id: v.pipe(v.string(), v.nonEmpty(), v.maxLength(128)),
   status: v.pipe(v.string(), v.nonEmpty(), v.maxLength(64)),
-  amount: v.pipe(v.string(), v.regex(/^\d+\.\d{2}$/)),
+  amount: v.pipe(v.string(), v.regex(MONEY_AMOUNT_REGEX)),
   currency: v.pipe(v.string(), v.regex(/^[A-Z]{3}$/)),
 });
 
-const BraintreeCheckoutSuccessResponseSchema = v.strictObject({
+const CheckoutSuccessResponseSchema = v.strictObject({
   success: v.literal(true),
   sandbox: v.literal(true),
-  transaction: BraintreeTransactionSchema,
+  transaction: CheckoutTransactionSchema,
 });
 
-const BraintreeCheckoutErrorResponseSchema = v.strictObject({
+const CheckoutErrorResponseSchema = v.strictObject({
   success: v.literal(false),
   sandbox: v.literal(true),
-  code: v.picklist([
-    "INVALID_REQUEST",
-    "UNAUTHORIZED",
-    "INVALID_ORIGIN",
-    "BASKET_CHANGED",
-    "CHECKOUT_UNAVAILABLE",
-    "PAYMENT_NOT_APPROVED",
-    "PAYMENT_STATUS_UNKNOWN",
-    "SANDBOX_NOT_CONFIGURED",
-  ]),
+  code: v.picklist(CHECKOUT_ERROR_CODES),
   message: v.pipe(v.string(), v.nonEmpty(), v.maxLength(300)),
   retryable: v.boolean(),
 });
 
-export const BraintreeCheckoutResponseSchema = v.variant("success", [
-  BraintreeCheckoutSuccessResponseSchema,
-  BraintreeCheckoutErrorResponseSchema,
+export const CheckoutResponseSchema = v.variant("success", [
+  CheckoutSuccessResponseSchema,
+  CheckoutErrorResponseSchema,
 ]);
 
-const BraintreeSandboxAttemptBaseEntries = {
+const SandboxAttemptBaseEntries = {
   version: v.literal(1),
   basketFingerprint: v.pipe(
     v.string(),
@@ -124,18 +111,18 @@ const BraintreeSandboxAttemptBaseEntries = {
   idempotencyKey: v.pipe(v.string(), v.uuid()),
 };
 
-export const BraintreeSandboxAttemptSchema = v.variant("status", [
+export const SandboxAttemptSchema = v.variant("status", [
   v.strictObject({
-    ...BraintreeSandboxAttemptBaseEntries,
-    status: v.literal("pending"),
+    ...SandboxAttemptBaseEntries,
+    status: v.literal(SandboxAttemptStatus.Pending),
   }),
   v.strictObject({
-    ...BraintreeSandboxAttemptBaseEntries,
-    status: v.literal("unknown"),
+    ...SandboxAttemptBaseEntries,
+    status: v.literal(SandboxAttemptStatus.Unknown),
   }),
   v.strictObject({
-    ...BraintreeSandboxAttemptBaseEntries,
-    status: v.literal("success"),
-    transaction: BraintreeTransactionSchema,
+    ...SandboxAttemptBaseEntries,
+    status: v.literal(SandboxAttemptStatus.Success),
+    transaction: CheckoutTransactionSchema,
   }),
 ]);

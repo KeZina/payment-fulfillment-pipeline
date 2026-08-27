@@ -1,9 +1,44 @@
 import "client-only";
 
 import * as v from "valibot";
-import { BRAINTREE_SANDBOX_ATTEMPT_STORAGE_KEY } from "@/constants";
-import { BraintreeSandboxAttemptSchema } from "@/schemas";
-import type { BasketItem, BraintreeSandboxAttempt } from "@/types";
+import { SANDBOX_ATTEMPT_STORAGE_KEY, SandboxAttemptStatus } from "@/constants";
+import { SandboxAttemptSchema } from "@/schemas";
+import type { BasketItem, SandboxAttempt } from "@/types";
+
+const storedAttemptListeners = new Set<() => void>();
+
+function emitStoredAttemptChange() {
+  for (const listener of storedAttemptListeners) {
+    listener();
+  }
+}
+
+export function subscribeToStoredAttemptChanges(onStoreChange: () => void) {
+  storedAttemptListeners.add(onStoreChange);
+
+  return () => {
+    storedAttemptListeners.delete(onStoreChange);
+  };
+}
+
+export function subscribeToStoredAttemptStorageEvents(
+  userId: string,
+  onStoreChange: () => void,
+) {
+  const attemptStorageKey = getAttemptStorageKey(userId);
+
+  function handleStorageChange(event: StorageEvent) {
+    if (event.key === attemptStorageKey) {
+      onStoreChange();
+    }
+  }
+
+  window.addEventListener("storage", handleStorageChange);
+
+  return () => {
+    window.removeEventListener("storage", handleStorageChange);
+  };
+}
 
 export function createBasketFingerprint(items: BasketItem[]) {
   return JSON.stringify(
@@ -14,7 +49,7 @@ export function createBasketFingerprint(items: BasketItem[]) {
 }
 
 export function getAttemptStorageKey(userId: string) {
-  return `${BRAINTREE_SANDBOX_ATTEMPT_STORAGE_KEY}:${encodeURIComponent(
+  return `${SANDBOX_ATTEMPT_STORAGE_KEY}:${encodeURIComponent(
     userId,
   )}`;
 }
@@ -31,13 +66,13 @@ export function readStoredAttempt(
     }
 
     const parsedValue: unknown = JSON.parse(value);
-    const result = v.safeParse(BraintreeSandboxAttemptSchema, parsedValue);
+    const result = v.safeParse(SandboxAttemptSchema, parsedValue);
 
     if (!result.success) {
       return null;
     }
 
-    if (result.output.status !== "success") {
+    if (result.output.status !== SandboxAttemptStatus.Success) {
       return result.output;
     }
 
@@ -51,13 +86,14 @@ export function readStoredAttempt(
 
 export function storeAttempt(
   userId: string,
-  attempt: BraintreeSandboxAttempt,
+  attempt: SandboxAttempt,
 ) {
   try {
     window.localStorage.setItem(
       getAttemptStorageKey(userId),
       JSON.stringify(attempt),
     );
+    emitStoredAttemptChange();
     return true;
   } catch {
     return false;
@@ -67,6 +103,7 @@ export function storeAttempt(
 export function clearStoredAttempt(userId: string) {
   try {
     window.localStorage.removeItem(getAttemptStorageKey(userId));
+    emitStoredAttemptChange();
   } catch {
     // The in-memory UI lock remains active if browser storage is unavailable.
   }

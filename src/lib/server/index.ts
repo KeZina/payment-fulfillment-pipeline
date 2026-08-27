@@ -2,8 +2,9 @@ import "server-only";
 
 export { auth } from "./auth";
 export {
-  getBraintreeSandboxGateway,
-  getBraintreeSandboxMerchantAccountId,
+  getConfiguredSandboxGateway,
+  getSandboxGateway,
+  getSandboxMerchantAccountId,
 } from "./braintree";
 export {
   createSandboxCheckoutRequestFingerprint,
@@ -12,4 +13,12 @@ export {
   getSandboxCheckoutLedgerState,
   recordSuccessfulSandboxCheckout,
 } from "./checkout";
+export {
+  checkoutErrorResponse,
+  checkoutSuccessResponse,
+  clientTokenErrorResponse,
+  clientTokenSuccessResponse,
+  parseCheckoutRequest,
+  revalidateItemsCatalog,
+} from "./checkout-request";
 export { getCachedDefaultItemsPage, getItemsPage } from "./items";

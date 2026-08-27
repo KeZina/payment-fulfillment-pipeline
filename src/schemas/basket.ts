@@ -1,22 +1,11 @@
 import * as v from "valibot";
-
-const PositiveIntegerSchema = v.pipe(
-  v.number(),
-  v.safeInteger(),
-  v.minValue(1),
-);
-
-const PriceSchema = v.pipe(
-  v.string(),
-  v.maxLength(11),
-  v.regex(/^\d+(?:\.\d{1,2})?$/),
-);
+import { BasketPriceSchema, PositiveIntegerSchema } from "./shared";
 
 export const BasketItemSchema = v.pipe(
   v.object({
     id: PositiveIntegerSchema,
     name: v.pipe(v.string(), v.nonEmpty(), v.maxLength(500)),
-    salePrice: PriceSchema,
+    salePrice: BasketPriceSchema,
     quantity: PositiveIntegerSchema,
     availableQuantity: PositiveIntegerSchema,
   }),

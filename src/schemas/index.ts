@@ -1,9 +1,9 @@
 export { SignInSchema, SignUpSchema } from "./auth";
 export {
-  BraintreeCheckoutRequestSchema,
-  BraintreeCheckoutResponseSchema,
-  BraintreeClientTokenResponseSchema,
-  BraintreeSandboxAttemptSchema,
+  CheckoutRequestSchema,
+  CheckoutResponseSchema,
+  ClientTokenResponseSchema,
+  SandboxAttemptSchema,
   CheckoutDetailsSchema,
   CheckoutLineItemSchema,
 } from "./checkout";

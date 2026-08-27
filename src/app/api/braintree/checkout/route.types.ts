@@ -1,6 +1,5 @@
 import type braintree from "braintree";
 
-export type BraintreeSandboxTransactionRequest =
-  braintree.TransactionRequest & {
-    apiRequestKey: string;
-  };
+export type SandboxTransactionRequest = braintree.TransactionRequest & {
+  apiRequestKey: string;
+};
