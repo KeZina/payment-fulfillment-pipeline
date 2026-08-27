@@ -1,5 +1,6 @@
 export { UserRole } from "./auth";
 export { AddToBasketResult } from "./add-to-basket-result";
+export { CENTS_PER_UNIT, ZERO_CENTS } from "./money";
 export {
   ITEMS_PAGINATION_LIMIT,
   ITEMS_PAGINATION_LIMITS,

@@ -8,6 +8,7 @@ import {
   checkoutErrorResponse,
   checkoutSuccessResponse,
   parseCheckoutRequest,
+  persistCheckoutOrder,
   recordSuccessfulSandboxCheckout,
   revalidateItemsCatalog,
 } from "@/lib/server";
@@ -102,6 +103,25 @@ export async function POST(request: Request) {
     });
 
     if (recoveredCheckout?.status === SandboxCheckoutLedgerStatus.Fulfilled) {
+      const recoveryQuote = await getCheckoutQuote(parsedRequest.items).catch(
+        () => null,
+      );
+
+      if (recoveryQuote?.success) {
+        await persistCheckoutOrder({
+          idempotencyKey: parsedRequest.idempotencyKey,
+          userId: sessionResult.session.user.id,
+          checkoutDetails: parsedRequest.checkoutDetails,
+          itemSnapshots: recoveryQuote.items,
+          transaction: recoveredCheckout.transaction,
+        }).catch((error: unknown) => {
+          console.error(
+            "Sandbox checkout order persistence failed during recovery:",
+            error instanceof Error ? error.message : "Unknown database error.",
+          );
+        });
+      }
+
       revalidateItemsCatalog();
       return checkoutSuccessResponse(recoveredCheckout.transaction);
     }
@@ -115,6 +135,25 @@ export async function POST(request: Request) {
   }
 
   if (ledgerState.status === SandboxCheckoutLedgerStatus.Fulfilled) {
+    const replayQuote = await getCheckoutQuote(parsedRequest.items).catch(
+      () => null,
+    );
+
+    if (replayQuote?.success) {
+      await persistCheckoutOrder({
+        idempotencyKey: parsedRequest.idempotencyKey,
+        userId: sessionResult.session.user.id,
+        checkoutDetails: parsedRequest.checkoutDetails,
+        itemSnapshots: replayQuote.items,
+        transaction: ledgerState.transaction,
+      }).catch((error: unknown) => {
+        console.error(
+          "Sandbox checkout order persistence failed during replay:",
+          error instanceof Error ? error.message : "Unknown database error.",
+        );
+      });
+    }
+
     revalidateItemsCatalog();
     return checkoutSuccessResponse(ledgerState.transaction);
   }
@@ -189,6 +228,8 @@ export async function POST(request: Request) {
       requestFingerprint,
       transaction,
       userId: sessionResult.session.user.id,
+      checkoutDetails: parsedRequest.checkoutDetails,
+      itemSnapshots: quote.items,
     }).catch((error: unknown) => {
       console.error(
         "Braintree Sandbox approved transaction fulfillment failed:",

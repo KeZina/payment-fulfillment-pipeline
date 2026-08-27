@@ -11,6 +11,7 @@ export {
   fulfillSandboxCheckoutInventory,
   getCheckoutQuote,
   getSandboxCheckoutLedgerState,
+  persistCheckoutOrder,
   recordSuccessfulSandboxCheckout,
 } from "./checkout";
 export {
@@ -22,3 +23,4 @@ export {
   revalidateItemsCatalog,
 } from "./checkout-request";
 export { getCachedDefaultItemsPage, getItemsPage } from "./items";
+export { getUserOrderById, getUserOrderHistory } from "./order-history";

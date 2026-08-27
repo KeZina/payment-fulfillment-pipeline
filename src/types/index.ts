@@ -18,8 +18,11 @@ export type {
   SandboxAttempt,
   CheckoutDetails,
   CheckoutLineItem,
-  CheckoutQuoteResult,
 } from "./checkout";
+export type {
+  CheckoutQuoteItemSnapshot,
+  CheckoutQuoteResult,
+} from "./checkout-quote";
 export type {
   CheckoutHostedFieldsOptions,
   HostedFieldsSessionState,

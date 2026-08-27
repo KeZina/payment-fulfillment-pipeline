@@ -1,4 +1,4 @@
-import type { CheckoutLineItem } from "@/types";
+import type { CheckoutDetails, CheckoutLineItem } from "@/types";
 import { SandboxCheckoutLedgerStatus } from "@/constants";
 
 export type SandboxTransactionSnapshot = {
@@ -6,6 +6,21 @@ export type SandboxTransactionSnapshot = {
   status: string;
   amount: string;
   currency: string;
+};
+
+export type CheckoutItemSnapshot = {
+  id: number;
+  name: string;
+  salePrice: string;
+  quantity: number;
+};
+
+export type PersistCheckoutOrderParams = {
+  idempotencyKey: string;
+  userId: string;
+  checkoutDetails: CheckoutDetails;
+  itemSnapshots: CheckoutItemSnapshot[];
+  transaction: SandboxTransactionSnapshot;
 };
 
 export type SandboxCheckoutLedgerState =
@@ -31,4 +46,6 @@ export type FulfillSandboxCheckoutInventoryParams =
 export type RecordSuccessfulSandboxCheckoutParams =
   FulfillSandboxCheckoutInventoryParams & {
     transaction: SandboxTransactionSnapshot;
+    checkoutDetails: CheckoutDetails;
+    itemSnapshots: CheckoutItemSnapshot[];
   };

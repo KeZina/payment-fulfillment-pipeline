@@ -24,7 +24,7 @@ complete a simulated card checkout through Braintree Sandbox Hosted Fields.
 - Email and password sign-up and sign-in with Better Auth.
 - PostgreSQL-backed users, accounts, sessions, and verification records.
 - User and admin roles in the database schema.
-- Protected basket and checkout routes under `/user`.
+- Protected basket, checkout, and order history routes under `/user`.
 - Authenticated account navigation and sign-out.
 
 ### Basket
@@ -48,11 +48,23 @@ complete a simulated card checkout through Braintree Sandbox Hosted Fields.
 - Exact decimal amount calculation on the server.
 - Request idempotency key forwarded to Braintree and recorded locally.
 - Sandbox transaction ledger with provider transaction details.
+- Order and order-line-item records with snapshotted product names and prices.
+- Persisted delivery details (name, email, phone, address, and instructions).
 - Inventory decrement after a confirmed sandbox approval.
 - Catalog cache invalidation after inventory fulfillment.
 - Basket clearing and redirect to the storefront after confirmed success.
 - Browser retry guard for pending or unknown transaction results.
 - Braintree environment hard-locked to `Sandbox` on the server.
+
+### Order history
+
+- Authenticated order list at `/user/history`.
+- Order receipt page at `/user/history/[orderId]` with delivery details and
+  snapshotted line items.
+- Orders linked to the sandbox transaction ledger through an idempotency key.
+- Line-item names and prices captured at checkout time, so history stays
+  accurate if catalog prices change later.
+- Empty state for users with no fulfilled orders yet.
 
 ## Technology
 
@@ -76,6 +88,8 @@ complete a simulated card checkout through Braintree Sandbox Hosted Fields.
 | `/sign-up` | Account creation |
 | `/user/basket` | Authenticated basket review |
 | `/user/checkout` | Delivery form and Braintree Sandbox Hosted Fields |
+| `/user/history` | Authenticated order history list |
+| `/user/history/[orderId]` | Order receipt with delivery details and line items |
 | `/api/items` | Validated, cursor-paginated catalog API |
 | `/api/auth/[...all]` | Better Auth handler |
 | `/api/braintree/client-token` | Authenticated Sandbox client-token endpoint |
@@ -172,18 +186,16 @@ Before creating a Sandbox sale, the server:
 6. Uses only the server-side Sandbox gateway credentials.
 
 After Braintree reports approval, the application records the Sandbox
-transaction and applies the inventory decrement through a guarded SQL
-statement. Only a fulfilled ledger entry is returned to the browser as a
-successful checkout.
+transaction, decrements inventory through a guarded SQL statement, and persists
+an order with delivery details and snapshotted line items. Only a fulfilled
+ledger entry is returned to the browser as a successful checkout.
 
 ## Current limitations
 
 - Braintree Sandbox only; production Braintree is deliberately unsupported.
 - The storefront currently displays prices in `en-US` USD.
-- Delivery details are validated but are not persisted yet.
-- There is no full order, order-line, fulfillment, refund, webhook, or customer
-  order-history workflow yet.
-- The account settings and history links do not have pages yet.
+- Account settings (`/user/settings`) is not implemented yet.
+- There is no admin dashboard, refund flow, or Braintree webhook handling yet.
 - The basket is local to one browser rather than synchronized to a user account.
 - Product artwork is currently illustrative placeholder UI.
 - Automated tests and continuous integration are not set up yet.

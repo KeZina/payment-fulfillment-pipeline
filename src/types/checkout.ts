@@ -26,7 +26,3 @@ export type CheckoutSuccessResponse = Extract<
 >;
 
 export type SandboxAttempt = v.InferOutput<typeof SandboxAttemptSchema>;
-
-export type CheckoutQuoteResult =
-  | { success: true; amount: string }
-  | { success: false };
