@@ -1,4 +1,15 @@
 export { UserRole } from "./auth";
+export {
+  AVATAR_ACCEPT_ATTRIBUTE,
+  AVATAR_ACCEPTED_MIME_TYPES,
+  AVATAR_MAX_DATA_URL_LENGTH,
+  AVATAR_MAX_OUTPUT_BYTES,
+  AVATAR_MAX_SOURCE_BYTES,
+  AVATAR_NAV_DISPLAY_SIZE_PX,
+  AVATAR_OUTPUT_DIMENSIONS,
+  AVATAR_OUTPUT_QUALITIES,
+  AVATAR_SETTINGS_PREVIEW_SIZE_PX,
+} from "./avatar";
 export { AddToBasketResult } from "./add-to-basket-result";
 export { CENTS_PER_UNIT, ZERO_CENTS } from "./money";
 export {
@@ -51,6 +62,7 @@ export {
 } from "./checkout-payment";
 export type { GetCheckoutPaymentButtonLabelParams } from "./checkout-payment";
 export { CHECKOUT_FORM_COPY } from "./checkout-form";
+export { SETTINGS_PROFILE_FORM_ID } from "./settings";
 export {
   ApplyCheckoutResponseKind,
   CheckoutPaymentFeedbackKind,

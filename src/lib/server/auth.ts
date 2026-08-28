@@ -16,6 +16,13 @@ export const auth = betterAuth({
         default: UserRole.User,
       },
     },
+    changeEmail: {
+      enabled: true,
+      updateEmailWithoutVerification: true,
+    },
+    deleteUser: {
+      enabled: true,
+    },
   },
   emailAndPassword: {
     enabled: true,

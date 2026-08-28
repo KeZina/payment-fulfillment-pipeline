@@ -1,4 +1,5 @@
 export { checkIfFormFieldInvalid } from "./check-if-form-field-invalid";
+export { readAvatarFileAsDataUrl, validateAvatarFile } from "./avatar-image";
 export {
   applyCheckoutResponse,
   buildCheckoutRequestBody,

@@ -10,12 +10,12 @@ import {
   AccountSetting01Icon,
   HistoryIcon,
   LogoutCircle01Icon,
-  UserCheck02Icon,
 } from "@hugeicons/core-free-icons";
 import { signOut } from "@/app/actions/auth";
 import { Button } from "@/components/ui/button";
 import { getSession } from "@/utils/server/get-session";
 import { NavEmptyUserData } from "../nav-empty-user-data";
+import { NavUserAvatar } from "../nav-user-avatar";
 
 export async function NavUserData() {
   const session = await getSession();
@@ -24,12 +24,13 @@ export async function NavUserData() {
     <>
       {session ? (
         <NavigationMenuItem>
-          <NavigationMenuTrigger aria-label='Open account menu'>
-            <HugeiconsIcon
-              icon={UserCheck02Icon}
-              color='currentColor'
-              strokeWidth={1.5}
-              aria-hidden='true'
+          <NavigationMenuTrigger
+            aria-label={`Open account menu for ${session.user.name}`}
+            className='px-2'
+          >
+            <NavUserAvatar
+              name={session.user.name}
+              image={session.user.image}
             />
           </NavigationMenuTrigger>
           <NavigationMenuContent>

@@ -1,5 +1,10 @@
 export { SignInSchema, SignUpSchema } from "./auth";
 export {
+  ChangePasswordSchema,
+  DeleteAccountSchema,
+  UpdateProfileSchema,
+} from "./account";
+export {
   CheckoutRequestSchema,
   CheckoutResponseSchema,
   ClientTokenResponseSchema,
