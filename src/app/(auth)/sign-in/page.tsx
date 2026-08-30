@@ -1,4 +1,6 @@
+import { Suspense } from "react";
 import { SignInForm } from "../_components/sign-in-form";
+import { SignInFormResolved } from "../_components/sign-in-form-resolved";
 
 type SignInPageProps = {
   searchParams: Promise<{
@@ -6,8 +8,10 @@ type SignInPageProps = {
   }>;
 };
 
-export default async function Page({ searchParams }: SignInPageProps) {
-  const { callbackUrl } = await searchParams;
-
-  return <SignInForm callbackUrl={callbackUrl} />;
+export default function Page({ searchParams }: SignInPageProps) {
+  return (
+    <Suspense fallback={<SignInForm />}>
+      <SignInFormResolved searchParams={searchParams} />
+    </Suspense>
+  );
 }
