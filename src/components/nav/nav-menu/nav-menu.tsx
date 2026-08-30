@@ -4,8 +4,10 @@ import { navMenuStyles } from "./nav-menu.styles";
 
 export function NavMenu({ children }: WithChildren) {
   return (
-    <NavigationMenu className={navMenuStyles.root}>
-      {children}
-    </NavigationMenu>
+    <div className={navMenuStyles.sticky}>
+      <NavigationMenu className={navMenuStyles.root}>
+        {children}
+      </NavigationMenu>
+    </div>
   );
 }

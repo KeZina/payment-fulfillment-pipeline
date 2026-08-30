@@ -8,11 +8,13 @@ import {
 import { HugeiconsIcon } from "@hugeicons/react";
 import {
   AccountSetting01Icon,
+  DashboardSquare01Icon,
   HistoryIcon,
   LogoutCircle01Icon,
 } from "@hugeicons/core-free-icons";
 import { signOut } from "@/app/actions/auth";
 import { Button } from "@/components/ui/button";
+import { isAdminRole } from "@/utils";
 import { getSession } from "@/utils/server/get-session";
 import { NavEmptyUserData } from "../nav-empty-user-data";
 import { NavUserAvatar } from "../nav-user-avatar";
@@ -68,6 +70,23 @@ export async function NavUserData() {
                   }
                 />
               </li>
+              {isAdminRole(session.user.role) ? (
+                <li>
+                  <NavigationMenuLink
+                    render={
+                      <Link href='/admin'>
+                        <HugeiconsIcon
+                          icon={DashboardSquare01Icon}
+                          color='currentColor'
+                          strokeWidth={1.5}
+                          aria-hidden='true'
+                        />
+                        <span>Admin</span>
+                      </Link>
+                    }
+                  />
+                </li>
+              ) : null}
               <li>
                 <Button variant='ghost' onClick={signOut}>
                   <HugeiconsIcon

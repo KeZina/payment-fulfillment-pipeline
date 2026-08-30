@@ -6,7 +6,7 @@ export const item = pgTable(
   "item",
   {
     id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
-    name: text("name").notNull(),
+    name: text("name").notNull().unique(),
     description: text("description"),
     price: numeric("price", { precision: 10, scale: 2 }).notNull(),
     discount: numeric("discount", { precision: 4, scale: 2 })

@@ -24,3 +24,8 @@ export {
 } from "./checkout-request";
 export { getCachedDefaultItemsPage, getItemsPage } from "./items";
 export { getUserOrderById, getUserOrderHistory } from "./order-history";
+export {
+  getAdminItemsPage,
+  getAdminOrderStats,
+  getAdminRecentOrders,
+} from "./admin";

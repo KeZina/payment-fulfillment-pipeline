@@ -5,6 +5,7 @@ export type {
   DeleteAccountInput,
   UpdateProfileInput,
 } from "./account";
+export type { UpdateItemInput } from "./admin";
 export type { ServerResponse } from "./server-response";
 export type { Item } from "./item";
 export type { ItemsPage } from "./items-page";
@@ -13,6 +14,11 @@ export type { WithCursor } from "./with-cursor";
 export type { ItemsSortFieldsValues } from "./items-sort-fields-values";
 export type { ItemsFilterFieldsValues } from "./items-filter-fields-values";
 export type { GetItemsPageParams } from "./params/get-items-page-params";
+export type {
+  AdminCatalogItem,
+  AdminItemsPage,
+  GetAdminItemsPageParams,
+} from "./params/get-admin-items-page-params";
 export type { ItemsRequestQuery } from "./params/items-request-query";
 export type { BasketItem, BasketProduct } from "./basket";
 export type {

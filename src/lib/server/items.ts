@@ -10,6 +10,7 @@ import type { GetItemsPageParams, ItemsPage } from "@/types";
 import { encodeCursor } from "@/utils/server/encode-cursor";
 import { and, asc, desc, sql } from "drizzle-orm";
 import { cacheLife, cacheTag } from "next/cache";
+import { buildItemTextSearchCondition } from "./item-search-condition";
 
 export async function getItemsPage({
   search = null,
@@ -23,12 +24,7 @@ export async function getItemsPage({
   const conditions = [];
 
   if (search) {
-    conditions.push(
-      sql`(
-        strpos(lower(${item.name}), lower(${search})) > 0
-        OR strpos(lower(coalesce(${item.description}, '')), lower(${search})) > 0
-      )`,
-    );
+    conditions.push(buildItemTextSearchCondition(search));
   }
 
   if (hasDiscount) {

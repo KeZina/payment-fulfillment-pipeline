@@ -22,6 +22,13 @@
       "when": 1787835665733,
       "tag": "0002_order_history",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1788016063659,
+      "tag": "0003_item_name_unique",
+      "breakpoints": true
     }
   ]
 }

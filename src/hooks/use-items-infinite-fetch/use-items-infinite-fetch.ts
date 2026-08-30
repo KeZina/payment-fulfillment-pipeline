@@ -2,8 +2,6 @@ import { useDeferredValue, useEffect } from "react";
 import useSWRInfinite from "swr/infinite";
 import { UseItemsInfiniteFetchProps } from "./use-items-infinite-fetch.types";
 import { useQueryStates } from "nuqs";
-import { useDebounce } from "use-debounce";
-import { SEARCH_DEBOUNCE_MS } from "@/constants";
 import { itemsSearchParamsParsers } from "@/schemas/items-search-params";
 import type { ItemsPage } from "@/types";
 import { createItemsGetKey } from "@/utils/items-request";
@@ -14,12 +12,11 @@ export const useItemsInfiniteFetch = ({
   const [{ search, salePrice, hasDiscount, inStockOnly, limit }] =
     useQueryStates(itemsSearchParamsParsers);
 
+  // The search query state is already debounced at the source (see the
+  // Search component), so this only needs to defer re-renders for a smooth
+  // transition when the value changes.
   const normalizedSearch = search.trim();
-  const [debouncedSearch] = useDebounce(
-    normalizedSearch,
-    SEARCH_DEBOUNCE_MS,
-  );
-  const deferredSearch = useDeferredValue(debouncedSearch);
+  const deferredSearch = useDeferredValue(normalizedSearch);
   const isWaitingForSearch = normalizedSearch !== deferredSearch;
 
   const getKey = createItemsGetKey({
