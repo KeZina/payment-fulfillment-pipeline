@@ -24,7 +24,7 @@ import Link from "next/link";
 import { toast } from "sonner";
 import { signIn } from "@/app/actions/auth";
 
-export function SignInForm() {
+export function SignInForm({ callbackUrl }: { callbackUrl?: string }) {
   const form = useForm({
     defaultValues: {
       email: "",
@@ -34,7 +34,7 @@ export function SignInForm() {
       onSubmit: SignInSchema,
     },
     onSubmit: async ({ value }) => {
-      const res = await signIn(value);
+      const res = await signIn(value, callbackUrl);
 
       if (!res.success) {
         toast.error(res.error);
@@ -77,7 +77,7 @@ export function SignInForm() {
                       onChange={(e) => field.handleChange(e.target.value)}
                       aria-invalid={checkIfFormFieldInvalid(field)}
                       placeholder='qwerty@qwerty.qwerty'
-                      autoComplete='off`'
+                      autoComplete='email'
                     />
                     {checkIfFormFieldInvalid(field) && (
                       <FieldError errors={field.state.meta.errors} />
@@ -92,12 +92,13 @@ export function SignInForm() {
                     <Input
                       id={field.name}
                       name={field.name}
+                      type='password'
                       value={field.state.value}
                       onBlur={field.handleBlur}
                       onChange={(e) => field.handleChange(e.target.value)}
                       aria-invalid={checkIfFormFieldInvalid(field)}
                       placeholder='Your password'
-                      autoComplete='off`'
+                      autoComplete='current-password'
                     />
                     {checkIfFormFieldInvalid(field) && (
                       <FieldError errors={field.state.meta.errors} />

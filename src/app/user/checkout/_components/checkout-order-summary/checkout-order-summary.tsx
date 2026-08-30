@@ -1,14 +1,15 @@
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { CardAction, CardTitle } from "@/components/ui/card";
 import {
-  Card,
-  CardAction,
-  CardContent,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+  StickySidebar,
+  StickySidebarCard,
+  StickySidebarFooter,
+  StickySidebarHeader,
+  StickySidebarPinned,
+  StickySidebarScrollArea,
+} from "@/components/store/sticky-sidebar";
 import {
   Item,
   ItemActions,
@@ -17,7 +18,6 @@ import {
   ItemGroup,
   ItemTitle,
 } from "@/components/ui/item";
-import { Separator } from "@/components/ui/separator";
 import { formatBasketPrice } from "@/utils";
 import { checkoutOrderSummaryStyles } from "./checkout-order-summary.styles";
 import type { CheckoutOrderSummaryProps } from "./checkout-order-summary.types";
@@ -30,9 +30,9 @@ export function CheckoutOrderSummary({ items }: CheckoutOrderSummaryProps) {
   );
 
   return (
-    <aside className={checkoutOrderSummaryStyles.root}>
-      <Card className={checkoutOrderSummaryStyles.card}>
-        <CardHeader>
+    <StickySidebar>
+      <StickySidebarCard>
+        <StickySidebarHeader>
           <CardTitle role='heading' aria-level={2}>
             Order summary
           </CardTitle>
@@ -41,8 +41,8 @@ export function CheckoutOrderSummary({ items }: CheckoutOrderSummaryProps) {
               {itemCount} {itemCount === 1 ? "item" : "items"}
             </Badge>
           </CardAction>
-        </CardHeader>
-        <CardContent>
+        </StickySidebarHeader>
+        <StickySidebarScrollArea>
           <ItemGroup className={checkoutOrderSummaryStyles.list}>
             {items.map((item) => {
               const unitPrice = Number(item.salePrice);
@@ -53,7 +53,9 @@ export function CheckoutOrderSummary({ items }: CheckoutOrderSummaryProps) {
                   role='listitem'
                   className={checkoutOrderSummaryStyles.item}
                 >
-                  <ItemContent className={checkoutOrderSummaryStyles.content}>
+                  <ItemContent
+                    className={checkoutOrderSummaryStyles.contentItem}
+                  >
                     <ItemTitle className={checkoutOrderSummaryStyles.itemTitle}>
                       {item.name}
                     </ItemTitle>
@@ -68,7 +70,8 @@ export function CheckoutOrderSummary({ items }: CheckoutOrderSummaryProps) {
               );
             })}
           </ItemGroup>
-          <Separator className={checkoutOrderSummaryStyles.separator} />
+        </StickySidebarScrollArea>
+        <StickySidebarPinned>
           <div className={checkoutOrderSummaryStyles.total}>
             <span className={checkoutOrderSummaryStyles.totalLabel}>
               Subtotal
@@ -77,8 +80,8 @@ export function CheckoutOrderSummary({ items }: CheckoutOrderSummaryProps) {
               {formatBasketPrice(subtotal)}
             </strong>
           </div>
-        </CardContent>
-        <CardFooter className={checkoutOrderSummaryStyles.footer}>
+        </StickySidebarPinned>
+        <StickySidebarFooter>
           <Button
             variant='outline'
             className={checkoutOrderSummaryStyles.back}
@@ -87,8 +90,8 @@ export function CheckoutOrderSummary({ items }: CheckoutOrderSummaryProps) {
           >
             Edit basket
           </Button>
-        </CardFooter>
-      </Card>
-    </aside>
+        </StickySidebarFooter>
+      </StickySidebarCard>
+    </StickySidebar>
   );
 }

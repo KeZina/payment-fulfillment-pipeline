@@ -1,12 +1,12 @@
 "use client";
 
+import Image from "next/image";
 import {
   Add01Icon,
   Delete02Icon,
   MinusSignIcon,
 } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
-import { foodIllustrationClasses } from "@/app/_components/item-card/item-card.styles";
 import { Button } from "@/components/ui/button";
 import {
   Item,
@@ -17,7 +17,6 @@ import {
   ItemTitle,
 } from "@/components/ui/item";
 import { Separator } from "@/components/ui/separator";
-import { cn } from "@/lib";
 import { useBasketStore } from "@/stores/basket-store";
 import { formatBasketPrice } from "@/utils";
 import { basketItemCardStyles } from "./basket-item-card.styles";
@@ -26,8 +25,6 @@ import type { BasketItemCardProps } from "./basket-item-card.types";
 export function BasketItemCard({ item }: BasketItemCardProps) {
   const { decreaseItemQuantity, increaseItemQuantity, removeItem } =
     useBasketStore();
-  const accentClass =
-    foodIllustrationClasses[item.id % foodIllustrationClasses.length];
   const isAtQuantityLimit = item.quantity >= item.availableQuantity;
 
   const handleDecreaseItemQuantity = () => {
@@ -49,12 +46,14 @@ export function BasketItemCard({ item }: BasketItemCardProps) {
       size='sm'
       className={basketItemCardStyles.root}
     >
-      <ItemMedia
-        aria-hidden='true'
-        className={cn(basketItemCardStyles.illustration, accentClass)}
-      >
-        <div className={basketItemCardStyles.illustrationOverlay} />
-        <div className={basketItemCardStyles.illustrationAccent} />
+      <ItemMedia aria-hidden='true' className={basketItemCardStyles.illustration}>
+        <Image
+          src={item.imageUrl}
+          alt=''
+          width={64}
+          height={64}
+          className={basketItemCardStyles.image}
+        />
       </ItemMedia>
 
       <ItemContent className={basketItemCardStyles.details}>
@@ -63,7 +62,7 @@ export function BasketItemCard({ item }: BasketItemCardProps) {
           {formatBasketPrice(item.salePrice)}
         </span>
         <ItemDescription className={basketItemCardStyles.availability}>
-          {item.availableQuantity} available
+          {item.quantity}/{item.availableQuantity} in basket
         </ItemDescription>
       </ItemContent>
 

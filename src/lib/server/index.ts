@@ -23,7 +23,7 @@ export {
   revalidateItemsCatalog,
 } from "./checkout-request";
 export { getCachedDefaultItemsPage, getItemsPage } from "./items";
-export { getUserOrderById, getUserOrderHistory } from "./order-history";
+export { getUserOrderById, getUserOrderByIdempotencyKey, getUserOrderHistory } from "./order-history";
 export {
   getAdminItemsPage,
   getAdminOrderStats,

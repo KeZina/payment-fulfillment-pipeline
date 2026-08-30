@@ -26,10 +26,14 @@ export type PersistCheckoutOrderParams = {
 export type SandboxCheckoutLedgerState =
   | { status: typeof SandboxCheckoutLedgerStatus.Missing }
   | { status: typeof SandboxCheckoutLedgerStatus.Conflict }
-  | { status: typeof SandboxCheckoutLedgerStatus.Unfulfilled }
+  | {
+      status: typeof SandboxCheckoutLedgerStatus.Unfulfilled;
+      itemSnapshots: CheckoutItemSnapshot[] | null;
+    }
   | {
       status: typeof SandboxCheckoutLedgerStatus.Fulfilled;
       transaction: SandboxTransactionSnapshot;
+      itemSnapshots: CheckoutItemSnapshot[] | null;
     };
 
 export type GetSandboxCheckoutLedgerStateParams = {

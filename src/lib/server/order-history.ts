@@ -21,6 +21,32 @@ export async function getUserOrderHistory(userId: string) {
     .orderBy(desc(order.createdAt));
 }
 
+export async function getUserOrderByIdempotencyKey(
+  userId: string,
+  idempotencyKey: string,
+) {
+  const [orderRow] = await db
+    .select()
+    .from(order)
+    .where(and(eq(order.idempotencyKey, idempotencyKey), eq(order.userId, userId)))
+    .limit(1);
+
+  if (!orderRow) {
+    return null;
+  }
+
+  const lineItems = await db
+    .select()
+    .from(orderLineItem)
+    .where(eq(orderLineItem.orderId, orderRow.id))
+    .orderBy(orderLineItem.itemName);
+
+  return {
+    ...orderRow,
+    lineItems,
+  };
+}
+
 export async function getUserOrderById(userId: string, orderId: string) {
   const [orderRow] = await db
     .select()

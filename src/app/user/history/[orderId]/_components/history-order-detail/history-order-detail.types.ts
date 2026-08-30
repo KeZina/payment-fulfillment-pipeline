@@ -18,4 +18,7 @@ export type HistoryOrderDetailProps = {
   deliveryAddress: string;
   deliveryInstructions: string;
   lineItems: HistoryOrderDetailLineItem[];
+  title?: string;
+  backHref?: string;
+  backLabel?: string;
 };

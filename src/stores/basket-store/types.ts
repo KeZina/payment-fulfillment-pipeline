@@ -11,6 +11,16 @@ export interface BasketActions {
   decreaseItemQuantity: (itemId: number) => void;
   removeItem: (itemId: number) => void;
   clearBasket: () => void;
+  reconcileWithStock: (
+    liveItems: {
+      id: number;
+      name: string;
+      quantity: number;
+      salePrice: string;
+      categorySlug: string;
+      imageUrl: string;
+    }[],
+  ) => boolean;
 }
 
 export type BasketStore = BasketState & BasketActions;

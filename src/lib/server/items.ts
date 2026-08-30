@@ -1,12 +1,13 @@
 import "server-only";
 
+import { buildItemCategoryImageUrl } from "@/utils/item-category-image-url";
 import {
   ITEMS_PAGINATION_LIMIT,
   SortOrder,
 } from "@/constants";
 import { db } from "@/db";
 import { item } from "@/db/schemas";
-import type { GetItemsPageParams, ItemsPage } from "@/types";
+import type { CatalogItem, GetItemsPageParams, ItemsPage } from "@/types";
 import { encodeCursor } from "@/utils/server/encode-cursor";
 import { and, asc, desc, sql } from "drizzle-orm";
 import { cacheLife, cacheTag } from "next/cache";
@@ -75,6 +76,7 @@ export async function getItemsPage({
       id: item.id,
       name: item.name,
       description: item.description,
+      categorySlug: item.categorySlug,
       price: item.price,
       discount: item.discount,
       quantity: item.quantity,
@@ -86,7 +88,12 @@ export async function getItemsPage({
     .limit(limit + 1);
 
   const hasNextPage = rows.length > limit;
-  const data = hasNextPage ? rows.slice(0, limit) : rows;
+  const data: CatalogItem[] = (hasNextPage ? rows.slice(0, limit) : rows).map(
+    (row) => ({
+      ...row,
+      imageUrl: buildItemCategoryImageUrl(row.categorySlug),
+    }),
+  );
   const lastItem = data.at(-1);
 
   const nextCursor =

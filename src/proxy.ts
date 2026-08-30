@@ -9,7 +9,12 @@ export async function proxy(request: NextRequest) {
   });
 
   if (!session) {
-    return NextResponse.redirect(new URL("/sign-in", request.url));
+    const signInUrl = new URL("/sign-in", request.url);
+    const callbackPath = `${request.nextUrl.pathname}${request.nextUrl.search}`;
+
+    signInUrl.searchParams.set("callbackUrl", callbackPath);
+
+    return NextResponse.redirect(signInUrl);
   }
 
   if (

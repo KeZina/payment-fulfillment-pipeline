@@ -5,7 +5,7 @@ import { BasketContent } from "./_components/basket-content";
 export default function Page() {
   return (
     <ProvidersClient>
-      <div className='flex min-h-screen flex-col bg-muted/40'>
+      <div className='flex min-h-dvh flex-col bg-muted/40'>
         <StoreNavigation />
         <BasketContent />
       </div>

@@ -9,7 +9,6 @@ import {
   SandboxAttemptStatus,
 } from "@/constants";
 import { auth } from "@/lib/client";
-import { useBasketStore } from "@/stores/basket-store";
 import type { CheckoutDetails } from "@/types";
 import {
   CHECKOUT_DETAILS_FORM_ID,
@@ -92,7 +91,6 @@ function useStoredAttemptFeedback(
 export function CheckoutForm({ items }: CheckoutFormProps) {
   const { submitCheckout } = useCheckoutSubmit();
   const { data: session, isPending: isSessionPending } = auth.useSession();
-  const { clearBasket } = useBasketStore();
   const userId = session?.user.id;
   const paymentRef = useRef<CheckoutPaymentHandle>(null);
   const isRequestInFlightRef = useRef(false);
@@ -194,7 +192,6 @@ export function CheckoutForm({ items }: CheckoutFormProps) {
         paymentMethodNonce,
       });
       const result = applyCheckoutResponse({
-        clearBasket,
         clearPaymentFields: () => payment.clear(),
         pendingAttempt,
         response,
@@ -202,7 +199,7 @@ export function CheckoutForm({ items }: CheckoutFormProps) {
       });
 
       if (result.kind === ApplyCheckoutResponseKind.Redirect) {
-        window.location.replace("/");
+        window.location.replace(result.href);
         return;
       }
 

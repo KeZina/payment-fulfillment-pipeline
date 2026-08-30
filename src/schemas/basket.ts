@@ -8,6 +8,8 @@ export const BasketItemSchema = v.pipe(
     salePrice: BasketPriceSchema,
     quantity: PositiveIntegerSchema,
     availableQuantity: PositiveIntegerSchema,
+    categorySlug: v.pipe(v.string(), v.nonEmpty(), v.maxLength(64)),
+    imageUrl: v.pipe(v.string(), v.nonEmpty(), v.maxLength(512)),
   }),
   v.check(
     ({ quantity, availableQuantity }) => quantity <= availableQuantity,

@@ -1,10 +1,10 @@
 import type * as v from "valibot";
 import type { BasketItemSchema } from "@/schemas/basket";
-import type { Item } from "./item";
+import type { CatalogItem } from "./catalog-item";
 
 export type BasketItem = v.InferOutput<typeof BasketItemSchema>;
 
 export type BasketProduct = Pick<
-  Item,
-  "id" | "name" | "salePrice" | "quantity"
+  CatalogItem,
+  "id" | "name" | "salePrice" | "quantity" | "categorySlug" | "imageUrl"
 >;

@@ -1,8 +1,8 @@
-import { Item } from "@/types";
+import type { CatalogItem } from "@/types";
 import type { Ref } from "react";
 
 export type ItemCardProps = {
-  item: Item;
+  item: CatalogItem;
   isPlaceholder?: boolean;
   ref?: Ref<HTMLDivElement>;
 };

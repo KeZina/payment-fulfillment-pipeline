@@ -3,6 +3,7 @@ import {
   boolean,
   check,
   index,
+  jsonb,
   numeric,
   pgTable,
   text,
@@ -26,6 +27,14 @@ export const braintreeSandboxTransaction = pgTable(
     amount: numeric("amount", { precision: 10, scale: 2 }).notNull(),
     currency: varchar("currency", { length: 3 }).notNull(),
     inventoryApplied: boolean("inventory_applied").default(false).notNull(),
+    itemSnapshots: jsonb("item_snapshots").$type<
+      {
+        id: number;
+        name: string;
+        salePrice: string;
+        quantity: number;
+      }[]
+    >(),
     createdAt: timestamp("created_at").defaultNow().notNull(),
   },
   (table) => [

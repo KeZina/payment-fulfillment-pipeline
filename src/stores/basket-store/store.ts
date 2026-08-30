@@ -37,6 +37,8 @@ const createBasketStore: StateCreator<
                   salePrice: product.salePrice,
                   quantity: item.quantity + 1,
                   availableQuantity: product.quantity,
+                  categorySlug: product.categorySlug,
+                  imageUrl: product.imageUrl,
                 }
               : item,
           )
@@ -48,6 +50,8 @@ const createBasketStore: StateCreator<
               salePrice: product.salePrice,
               quantity: 1,
               availableQuantity: product.quantity,
+              categorySlug: product.categorySlug,
+              imageUrl: product.imageUrl,
             },
           ],
     }));
@@ -107,6 +111,49 @@ const createBasketStore: StateCreator<
     }
 
     set({ items: [] });
+  },
+
+  reconcileWithStock: (liveItems) => {
+    const liveById = new Map(liveItems.map((liveItem) => [liveItem.id, liveItem]));
+    let adjusted = false;
+
+    const nextItems = get().items.flatMap((basketItem) => {
+      const liveItem = liveById.get(basketItem.id);
+
+      if (!liveItem || liveItem.quantity < 1) {
+        adjusted = true;
+        return [];
+      }
+
+      const quantity = Math.min(basketItem.quantity, liveItem.quantity);
+
+      if (
+        quantity !== basketItem.quantity ||
+        liveItem.quantity !== basketItem.availableQuantity ||
+        liveItem.salePrice !== basketItem.salePrice ||
+        liveItem.name !== basketItem.name
+      ) {
+        adjusted = true;
+      }
+
+      return [
+        {
+          ...basketItem,
+          name: liveItem.name,
+          salePrice: liveItem.salePrice,
+          quantity,
+          availableQuantity: liveItem.quantity,
+          categorySlug: liveItem.categorySlug,
+          imageUrl: liveItem.imageUrl,
+        },
+      ];
+    });
+
+    if (adjusted) {
+      set({ items: nextItems });
+    }
+
+    return adjusted;
   },
 });
 

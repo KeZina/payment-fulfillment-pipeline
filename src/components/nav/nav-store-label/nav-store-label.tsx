@@ -11,7 +11,7 @@ export function NavStoreLabel() {
       <NavigationMenuLink
         render={<Link href='/' />}
       >
-        <span className={navStoreLabelStyles.label}>Store Name</span>
+        <span className={navStoreLabelStyles.label}>Pantry</span>
       </NavigationMenuLink>
     </NavigationMenuItem>
   );

@@ -13,6 +13,7 @@ import { ZERO_CENTS } from "@/constants/money";
 import type { CheckoutLineItem, CheckoutQuoteResult } from "@/types";
 import { formatCents, priceToCents } from "@/utils/server";
 import type {
+  CheckoutItemSnapshot,
   GetSandboxCheckoutLedgerStateParams,
   FulfillSandboxCheckoutInventoryParams,
   PersistCheckoutOrderParams,
@@ -32,6 +33,24 @@ export function createSandboxCheckoutRequestFingerprint(
   });
 }
 
+function buildOrderLineItemValues(
+  orderId: string,
+  itemSnapshots: CheckoutItemSnapshot[],
+) {
+  return itemSnapshots.map((itemSnapshot) => {
+    const unitCents = priceToCents(itemSnapshot.salePrice) ?? ZERO_CENTS;
+
+    return {
+      orderId,
+      itemId: itemSnapshot.id,
+      itemName: itemSnapshot.name,
+      unitPrice: itemSnapshot.salePrice,
+      quantity: itemSnapshot.quantity,
+      lineTotal: formatCents(unitCents * BigInt(itemSnapshot.quantity)),
+    };
+  });
+}
+
 export async function getSandboxCheckoutLedgerState({
   idempotencyKey,
   requestFingerprint,
@@ -43,6 +62,7 @@ export async function getSandboxCheckoutLedgerState({
       currency: braintreeSandboxTransaction.currency,
       id: braintreeSandboxTransaction.transactionId,
       inventoryApplied: braintreeSandboxTransaction.inventoryApplied,
+      itemSnapshots: braintreeSandboxTransaction.itemSnapshots,
       requestFingerprint: braintreeSandboxTransaction.requestFingerprint,
       status: braintreeSandboxTransaction.transactionStatus,
       userId: braintreeSandboxTransaction.userId,
@@ -63,7 +83,10 @@ export async function getSandboxCheckoutLedgerState({
   }
 
   if (!transaction.inventoryApplied) {
-    return { status: SandboxCheckoutLedgerStatus.Unfulfilled };
+    return {
+      status: SandboxCheckoutLedgerStatus.Unfulfilled,
+      itemSnapshots: transaction.itemSnapshots,
+    };
   }
 
   return {
@@ -74,6 +97,7 @@ export async function getSandboxCheckoutLedgerState({
       amount: transaction.amount,
       currency: transaction.currency,
     },
+    itemSnapshots: transaction.itemSnapshots,
   };
 }
 
@@ -84,9 +108,36 @@ export async function persistCheckoutOrder({
   itemSnapshots,
   transaction,
 }: PersistCheckoutOrderParams): Promise<void> {
-  const [insertedOrder] = await db
-    .insert(order)
-    .values({
+  const [existingOrder] = await db
+    .select({ id: order.id })
+    .from(order)
+    .where(eq(order.idempotencyKey, idempotencyKey))
+    .limit(1);
+
+  if (existingOrder) {
+    const [existingLine] = await db
+      .select({ id: orderLineItem.id })
+      .from(orderLineItem)
+      .where(eq(orderLineItem.orderId, existingOrder.id))
+      .limit(1);
+
+    if (existingLine) {
+      return;
+    }
+
+    await db
+      .insert(orderLineItem)
+      .values(buildOrderLineItemValues(existingOrder.id, itemSnapshots));
+
+    return;
+  }
+
+  const orderId = crypto.randomUUID();
+  const lineItemValues = buildOrderLineItemValues(orderId, itemSnapshots);
+
+  await db.batch([
+    db.insert(order).values({
+      id: orderId,
       userId,
       idempotencyKey,
       status: transaction.status,
@@ -97,28 +148,9 @@ export async function persistCheckoutOrder({
       phone: checkoutDetails.phone,
       deliveryAddress: checkoutDetails.deliveryAddress,
       deliveryInstructions: checkoutDetails.deliveryInstructions,
-    })
-    .onConflictDoNothing({ target: order.idempotencyKey })
-    .returning({ id: order.id });
-
-  if (!insertedOrder) {
-    return;
-  }
-
-  await db.insert(orderLineItem).values(
-    itemSnapshots.map((itemSnapshot) => {
-      const unitCents = priceToCents(itemSnapshot.salePrice) ?? ZERO_CENTS;
-
-      return {
-        orderId: insertedOrder.id,
-        itemId: itemSnapshot.id,
-        itemName: itemSnapshot.name,
-        unitPrice: itemSnapshot.salePrice,
-        quantity: itemSnapshot.quantity,
-        lineTotal: formatCents(unitCents * BigInt(itemSnapshot.quantity)),
-      };
     }),
-  );
+    db.insert(orderLineItem).values(lineItemValues),
+  ]);
 }
 
 export async function recordSuccessfulSandboxCheckout({
@@ -140,6 +172,7 @@ export async function recordSuccessfulSandboxCheckout({
       transactionStatus: transaction.status,
       amount: transaction.amount,
       currency: transaction.currency,
+      itemSnapshots,
     })
     .onConflictDoNothing();
 
@@ -151,13 +184,15 @@ export async function recordSuccessfulSandboxCheckout({
 
   if (ledgerState.status === SandboxCheckoutLedgerStatus.Fulfilled) {
     try {
-      await persistCheckoutOrder({
-        idempotencyKey,
-        userId,
-        checkoutDetails,
-        itemSnapshots,
-        transaction: ledgerState.transaction,
-      });
+      if (ledgerState.itemSnapshots) {
+        await persistCheckoutOrder({
+          idempotencyKey,
+          userId,
+          checkoutDetails,
+          itemSnapshots: ledgerState.itemSnapshots,
+          transaction: ledgerState.transaction,
+        });
+      }
     } catch (error: unknown) {
       console.error(
         "Sandbox checkout order persistence failed:",
@@ -181,13 +216,18 @@ export async function recordSuccessfulSandboxCheckout({
 
   if (fulfilledCheckout.status === SandboxCheckoutLedgerStatus.Fulfilled) {
     try {
-      await persistCheckoutOrder({
-        idempotencyKey,
-        userId,
-        checkoutDetails,
-        itemSnapshots,
-        transaction: fulfilledCheckout.transaction,
-      });
+      const snapshots =
+        fulfilledCheckout.itemSnapshots ?? ledgerState.itemSnapshots;
+
+      if (snapshots) {
+        await persistCheckoutOrder({
+          idempotencyKey,
+          userId,
+          checkoutDetails,
+          itemSnapshots: snapshots,
+          transaction: fulfilledCheckout.transaction,
+        });
+      }
     } catch (error: unknown) {
       console.error(
         "Sandbox checkout order persistence failed:",

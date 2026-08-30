@@ -8,6 +8,7 @@ export type {
 export type { UpdateItemInput } from "./admin";
 export type { ServerResponse } from "./server-response";
 export type { Item } from "./item";
+export type { CatalogItem } from "./catalog-item";
 export type { ItemsPage } from "./items-page";
 export type { CursorToken } from "./cursor-token";
 export type { WithCursor } from "./with-cursor";

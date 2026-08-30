@@ -35,6 +35,9 @@ export function HistoryOrderDetail({
   deliveryAddress,
   deliveryInstructions,
   lineItems,
+  title = "Order receipt",
+  backHref = "/user/history",
+  backLabel = "Back to order history",
 }: HistoryOrderDetailProps) {
   const itemCount = lineItems.reduce((total, item) => total + item.quantity, 0);
 
@@ -43,7 +46,7 @@ export function HistoryOrderDetail({
       <header className={historyOrderDetailStyles.header}>
         <div>
           <h1 className={historyOrderDetailStyles.title} role='heading' aria-level={1}>
-            Order receipt
+            {title}
           </h1>
           <p className={historyOrderDetailStyles.meta}>
             Placed {formatOrderDate(createdAt)} · {currency}
@@ -139,9 +142,9 @@ export function HistoryOrderDetail({
         variant='outline'
         className={historyOrderDetailStyles.back}
         nativeButton={false}
-        render={<Link href='/user/history' />}
+        render={<Link href={backHref} />}
       >
-        Back to order history
+        {backLabel}
       </Button>
     </main>
   );

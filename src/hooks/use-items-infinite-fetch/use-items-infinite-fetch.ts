@@ -54,11 +54,20 @@ export const useItemsInfiniteFetch = ({
   const visibleItems = inStockOnly
     ? fetchedItems.filter((item) => item.quantity > 0)
     : fetchedItems;
+  const lastPage = pages?.[pages.length - 1];
+  const hasMore = Boolean(lastPage?.nextCursor);
   const isInitialLoading = isLoading && visibleItems.length === 0;
+  const isLoadingMore =
+    isValidating &&
+    visibleItems.length > 0 &&
+    hasMore &&
+    !isWaitingForSearch;
 
   return {
     error,
+    hasMore,
     isLoading: isInitialLoading,
+    isLoadingMore,
     isRefreshing:
       (isWaitingForSearch || isValidating) && !isInitialLoading,
     items: visibleItems,

@@ -1,4 +1,4 @@
-import type { Item } from "./item";
+import type { CatalogItem } from "./catalog-item";
 import type { WithCursor } from "./with-cursor";
 
-export type ItemsPage = WithCursor<Item>;
+export type ItemsPage = WithCursor<CatalogItem>;

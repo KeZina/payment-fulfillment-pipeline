@@ -1,6 +1,6 @@
 import { sql } from "drizzle-orm";
-import { check } from "drizzle-orm/gel-core";
-import { integer, numeric, pgTable, text } from "drizzle-orm/pg-core";
+import { check, integer, numeric, pgTable, text } from "drizzle-orm/pg-core";
+import { itemCategory } from "./item-category-schema";
 
 export const item = pgTable(
   "item",
@@ -8,6 +8,9 @@ export const item = pgTable(
     id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
     name: text("name").notNull().unique(),
     description: text("description"),
+    categorySlug: text("category_slug")
+      .notNull()
+      .references(() => itemCategory.slug),
     price: numeric("price", { precision: 10, scale: 2 }).notNull(),
     discount: numeric("discount", { precision: 4, scale: 2 })
       .default("0.00")

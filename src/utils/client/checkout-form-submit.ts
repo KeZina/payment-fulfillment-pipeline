@@ -76,7 +76,6 @@ export function buildCheckoutRequestBody({
 }
 
 export function applyCheckoutResponse({
-  clearBasket,
   clearPaymentFields,
   pendingAttempt,
   response,
@@ -100,8 +99,10 @@ export function applyCheckoutResponse({
   if (response.success) {
     clearStoredAttempt(userId);
     clearPaymentFields();
-    clearBasket();
-    return { kind: ApplyCheckoutResponseKind.Redirect };
+    return {
+      kind: ApplyCheckoutResponseKind.Redirect,
+      href: `/user/checkout/confirmation?idempotencyKey=${pendingAttempt.idempotencyKey}`,
+    };
   }
 
   if (response.code === CheckoutErrorCode.PaymentStatusUnknown) {

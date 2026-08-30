@@ -103,16 +103,12 @@ export async function POST(request: Request) {
     });
 
     if (recoveredCheckout?.status === SandboxCheckoutLedgerStatus.Fulfilled) {
-      const recoveryQuote = await getCheckoutQuote(parsedRequest.items).catch(
-        () => null,
-      );
-
-      if (recoveryQuote?.success) {
+      if (recoveredCheckout.itemSnapshots) {
         await persistCheckoutOrder({
           idempotencyKey: parsedRequest.idempotencyKey,
           userId: sessionResult.session.user.id,
           checkoutDetails: parsedRequest.checkoutDetails,
-          itemSnapshots: recoveryQuote.items,
+          itemSnapshots: recoveredCheckout.itemSnapshots,
           transaction: recoveredCheckout.transaction,
         }).catch((error: unknown) => {
           console.error(
@@ -135,16 +131,12 @@ export async function POST(request: Request) {
   }
 
   if (ledgerState.status === SandboxCheckoutLedgerStatus.Fulfilled) {
-    const replayQuote = await getCheckoutQuote(parsedRequest.items).catch(
-      () => null,
-    );
-
-    if (replayQuote?.success) {
+    if (ledgerState.itemSnapshots) {
       await persistCheckoutOrder({
         idempotencyKey: parsedRequest.idempotencyKey,
         userId: sessionResult.session.user.id,
         checkoutDetails: parsedRequest.checkoutDetails,
-        itemSnapshots: replayQuote.items,
+        itemSnapshots: ledgerState.itemSnapshots,
         transaction: ledgerState.transaction,
       }).catch((error: unknown) => {
         console.error(

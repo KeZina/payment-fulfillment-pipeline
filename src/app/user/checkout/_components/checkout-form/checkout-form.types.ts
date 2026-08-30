@@ -26,7 +26,6 @@ export type BuildCheckoutRequestBodyParams = {
 export type SubmitCheckoutRequestParams = BuildCheckoutRequestBodyParams;
 
 export type ApplyCheckoutResponseParams = {
-  clearBasket: () => void;
   clearPaymentFields: () => void;
   pendingAttempt: SandboxAttempt;
   response: CheckoutResponse | null;
@@ -34,7 +33,7 @@ export type ApplyCheckoutResponseParams = {
 };
 
 export type ApplyCheckoutResponseResult =
-  | { kind: typeof ApplyCheckoutResponseKind.Redirect }
+  | { kind: typeof ApplyCheckoutResponseKind.Redirect; href: string }
   | {
       kind: typeof ApplyCheckoutResponseKind.Feedback;
       feedback: CheckoutPaymentFeedback;

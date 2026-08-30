@@ -272,7 +272,9 @@ export function CheckoutDetailsForm({
         </form>
       </CardContent>
       <CardFooter className={checkoutDetailsFormStyles.footer}>
-        Details are validated for this sandbox checkout but are not stored yet.
+        Demo orders, including the delivery details above, are stored for 30
+        days and then deleted. Use fictional contact details — do not enter
+        real personal information.
       </CardFooter>
     </Card>
   );
