@@ -24,8 +24,20 @@ complete a simulated card checkout through Braintree Sandbox Hosted Fields.
 - Email and password sign-up and sign-in with Better Auth.
 - PostgreSQL-backed users, accounts, sessions, and verification records.
 - User and admin roles in the database schema.
-- Protected basket, checkout, and order history routes under `/user`.
-- Authenticated account navigation and sign-out.
+- Protected basket, checkout, order history, and settings routes under `/user`.
+- Protected admin routes under `/admin` with role checks at the edge proxy and
+  in server components and actions.
+- Authenticated account navigation, admin link for admin users, and sign-out.
+
+### Admin
+
+- Admin overview at `/admin` with store-wide order count, revenue, and recent
+  orders.
+- Catalog management at `/admin/items` with server-rendered search, pagination,
+  and inline editing of price, discount, and stock.
+- Server Actions for catalog updates with Valibot validation and catalog cache
+  invalidation.
+- Admin session guards shared between page renders and mutations.
 
 ### Basket
 
@@ -66,6 +78,18 @@ complete a simulated card checkout through Braintree Sandbox Hosted Fields.
   accurate if catalog prices change later.
 - Empty state for users with no fulfilled orders yet.
 
+### Account settings
+
+- Authenticated profile and password management at `/user/settings`.
+- Account deletion with confirmation.
+
+### Navigation and search
+
+- Sticky storefront navigation with route-aware search behavior.
+- Debounced catalog search on the storefront, instant filtering in the basket,
+  non-shallow server navigation on the admin catalog, and hidden search on
+  checkout, settings, history, and admin overview routes.
+
 ## Technology
 
 - Next.js 16 App Router with Cache Components and React Compiler
@@ -90,6 +114,9 @@ complete a simulated card checkout through Braintree Sandbox Hosted Fields.
 | `/user/checkout` | Delivery form and Braintree Sandbox Hosted Fields |
 | `/user/history` | Authenticated order history list |
 | `/user/history/[orderId]` | Order receipt with delivery details and line items |
+| `/user/settings` | Authenticated profile, password, and account management |
+| `/admin` | Admin overview with order stats and recent orders |
+| `/admin/items` | Admin catalog management with search and pagination |
 | `/api/items` | Validated, cursor-paginated catalog API |
 | `/api/auth/[...all]` | Better Auth handler |
 | `/api/braintree/client-token` | Authenticated Sandbox client-token endpoint |
@@ -194,8 +221,7 @@ ledger entry is returned to the browser as a successful checkout.
 
 - Braintree Sandbox only; production Braintree is deliberately unsupported.
 - The storefront currently displays prices in `en-US` USD.
-- Account settings (`/user/settings`) is not implemented yet.
-- There is no admin dashboard, refund flow, or Braintree webhook handling yet.
+- There is no refund flow or Braintree webhook handling yet.
 - The basket is local to one browser rather than synchronized to a user account.
 - Product artwork is currently illustrative placeholder UI.
 - Automated tests and continuous integration are not set up yet.
@@ -205,7 +231,10 @@ ledger entry is returned to the browser as a successful checkout.
 ```text
 src/
 ├── app/                  Next.js pages, route handlers, and feature UI
+│   ├── admin/            Admin overview and catalog management
+│   └── actions/          Server Actions, including admin catalog updates
 ├── components/           Shared navigation, search, toolbar, and UI primitives
+├── constants/            App-wide and admin-specific constants
 ├── db/                   Drizzle connection, schemas, migrations, and seed data
 ├── hooks/                Catalog fetching hooks
 ├── lib/                  Client and server integrations
