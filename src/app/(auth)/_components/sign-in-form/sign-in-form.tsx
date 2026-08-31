@@ -8,7 +8,6 @@ import {
   CardDescription,
   CardFooter,
   CardHeader,
-  CardTitle,
 } from "@/components/ui/card";
 import {
   Field,
@@ -47,7 +46,7 @@ export function SignInForm({ callbackUrl }: { callbackUrl?: string }) {
   return (
     <Card className='w-full sm:max-w-md'>
       <CardHeader>
-        <CardTitle>Sign In</CardTitle>
+        <h1 className='font-heading text-base font-medium'>Sign In</h1>
         <CardDescription>
           Do not have an account?{" "}
           <Link className='text-black hover:underline' href='/sign-up'>
@@ -66,45 +65,57 @@ export function SignInForm({ callbackUrl }: { callbackUrl?: string }) {
           <FieldGroup>
             <FieldSet data-disabled={isSubmitting} disabled={isSubmitting}>
               <form.Field name='email'>
-                {(field) => (
-                  <Field data-invalid={checkIfFormFieldInvalid(field)}>
-                    <FieldLabel htmlFor={field.name}>Email</FieldLabel>
-                    <Input
-                      id={field.name}
-                      name={field.name}
-                      value={field.state.value}
-                      onBlur={field.handleBlur}
-                      onChange={(e) => field.handleChange(e.target.value)}
-                      aria-invalid={checkIfFormFieldInvalid(field)}
-                      placeholder='qwerty@qwerty.qwerty'
-                      autoComplete='email'
-                    />
-                    {checkIfFormFieldInvalid(field) && (
-                      <FieldError errors={field.state.meta.errors} />
-                    )}
-                  </Field>
-                )}
+                {(field) => {
+                  const errorId = `${field.name}-error`;
+                  const isInvalid = checkIfFormFieldInvalid(field);
+
+                  return (
+                    <Field data-invalid={isInvalid}>
+                      <FieldLabel htmlFor={field.name}>Email</FieldLabel>
+                      <Input
+                        id={field.name}
+                        name={field.name}
+                        value={field.state.value}
+                        onBlur={field.handleBlur}
+                        onChange={(e) => field.handleChange(e.target.value)}
+                        aria-invalid={isInvalid}
+                        aria-describedby={isInvalid ? errorId : undefined}
+                        placeholder='qwerty@qwerty.qwerty'
+                        autoComplete='email'
+                      />
+                      {isInvalid && (
+                        <FieldError id={errorId} errors={field.state.meta.errors} />
+                      )}
+                    </Field>
+                  );
+                }}
               </form.Field>
               <form.Field name='password'>
-                {(field) => (
-                  <Field data-invalid={checkIfFormFieldInvalid(field)}>
-                    <FieldLabel htmlFor={field.name}>Password</FieldLabel>
-                    <Input
-                      id={field.name}
-                      name={field.name}
-                      type='password'
-                      value={field.state.value}
-                      onBlur={field.handleBlur}
-                      onChange={(e) => field.handleChange(e.target.value)}
-                      aria-invalid={checkIfFormFieldInvalid(field)}
-                      placeholder='Your password'
-                      autoComplete='current-password'
-                    />
-                    {checkIfFormFieldInvalid(field) && (
-                      <FieldError errors={field.state.meta.errors} />
-                    )}
-                  </Field>
-                )}
+                {(field) => {
+                  const errorId = `${field.name}-error`;
+                  const isInvalid = checkIfFormFieldInvalid(field);
+
+                  return (
+                    <Field data-invalid={isInvalid}>
+                      <FieldLabel htmlFor={field.name}>Password</FieldLabel>
+                      <Input
+                        id={field.name}
+                        name={field.name}
+                        type='password'
+                        value={field.state.value}
+                        onBlur={field.handleBlur}
+                        onChange={(e) => field.handleChange(e.target.value)}
+                        aria-invalid={isInvalid}
+                        aria-describedby={isInvalid ? errorId : undefined}
+                        placeholder='Your password'
+                        autoComplete='current-password'
+                      />
+                      {isInvalid && (
+                        <FieldError id={errorId} errors={field.state.meta.errors} />
+                      )}
+                    </Field>
+                  );
+                }}
               </form.Field>
             </FieldSet>
           </FieldGroup>
@@ -113,12 +124,13 @@ export function SignInForm({ callbackUrl }: { callbackUrl?: string }) {
       <CardFooter>
         <Field orientation='horizontal'>
           <Button
+            nativeButton={false}
+            render={<Link href='/' />}
             type='button'
             variant='outline'
-            onClick={() => form.reset()}
             disabled={isSubmitting}
           >
-            <Link href='/'>Go back to the Store</Link>
+            Go back to the Store
           </Button>
           <Button type='submit' form='sign-in-form' disabled={isSubmitting}>
             Sign In

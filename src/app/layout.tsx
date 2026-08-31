@@ -5,6 +5,8 @@ import { WithChildren } from "@/types";
 import { cn } from "@/lib";
 import { Toaster } from "@/components/ui/sonner";
 import { StoreFooter } from "@/app/_components/store-footer";
+import { ProvidersClient } from "@/app/_components/providers";
+import { StoreNavigation } from "@/app/_components/store-navigation";
 
 const plusJakartaSans = Plus_Jakarta_Sans({ subsets: ["latin"] });
 
@@ -41,7 +43,10 @@ export default function Layout({ children }: WithChildren) {
       className={cn("h-full", "antialiased", plusJakartaSans.className)}
     >
       <body className='flex min-h-full flex-col'>
-        <div className='flex min-h-full flex-1 flex-col'>{children}</div>
+        <ProvidersClient>
+          <StoreNavigation />
+          <div className='flex min-h-full flex-1 flex-col'>{children}</div>
+        </ProvidersClient>
         <StoreFooter />
         <Toaster position='top-right' />
       </body>

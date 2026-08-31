@@ -1,1 +1,0 @@
--- Establishes the existing database schema as the migration baseline.

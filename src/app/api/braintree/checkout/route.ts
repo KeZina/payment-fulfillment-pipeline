@@ -1,14 +1,13 @@
 import {
   auth,
   createSandboxCheckoutRequestFingerprint,
-  fulfillSandboxCheckoutInventory,
+  fulfillAndPersistCheckout,
   getCheckoutQuote,
   getConfiguredSandboxGateway,
   getSandboxCheckoutLedgerState,
   checkoutErrorResponse,
   checkoutSuccessResponse,
   parseCheckoutRequest,
-  persistCheckoutOrder,
   recordSuccessfulSandboxCheckout,
   revalidateItemsCatalog,
 } from "@/lib/server";
@@ -89,11 +88,23 @@ export async function POST(request: Request) {
   }
 
   if (ledgerState.status === SandboxCheckoutLedgerStatus.Unfulfilled) {
-    const recoveredCheckout = await fulfillSandboxCheckoutInventory({
+    if (!ledgerState.itemSnapshots?.length) {
+      return checkoutErrorResponse(
+        CheckoutErrorCode.PaymentStatusUnknown,
+        "The sandbox transaction was recorded, but inventory fulfillment could not be confirmed.",
+        502,
+        false,
+      );
+    }
+
+    const recoveredCheckout = await fulfillAndPersistCheckout({
       idempotencyKey: parsedRequest.idempotencyKey,
       items: parsedRequest.items,
       requestFingerprint,
       userId: sessionResult.session.user.id,
+      checkoutDetails: parsedRequest.checkoutDetails,
+      itemSnapshots: ledgerState.itemSnapshots,
+      transaction: ledgerState.transaction,
     }).catch((error: unknown) => {
       console.error(
         "Braintree Sandbox inventory recovery failed:",
@@ -102,22 +113,9 @@ export async function POST(request: Request) {
       return null;
     });
 
-    if (recoveredCheckout?.status === SandboxCheckoutLedgerStatus.Fulfilled) {
-      if (recoveredCheckout.itemSnapshots) {
-        await persistCheckoutOrder({
-          idempotencyKey: parsedRequest.idempotencyKey,
-          userId: sessionResult.session.user.id,
-          checkoutDetails: parsedRequest.checkoutDetails,
-          itemSnapshots: recoveredCheckout.itemSnapshots,
-          transaction: recoveredCheckout.transaction,
-        }).catch((error: unknown) => {
-          console.error(
-            "Sandbox checkout order persistence failed during recovery:",
-            error instanceof Error ? error.message : "Unknown database error.",
-          );
-        });
-      }
-
+    if (
+      recoveredCheckout?.status === SandboxCheckoutLedgerStatus.Fulfilled
+    ) {
       revalidateItemsCatalog();
       return checkoutSuccessResponse(recoveredCheckout.transaction);
     }
@@ -131,9 +129,11 @@ export async function POST(request: Request) {
   }
 
   if (ledgerState.status === SandboxCheckoutLedgerStatus.Fulfilled) {
-    if (ledgerState.itemSnapshots) {
-      await persistCheckoutOrder({
+    if (ledgerState.itemSnapshots?.length) {
+      await fulfillAndPersistCheckout({
         idempotencyKey: parsedRequest.idempotencyKey,
+        items: parsedRequest.items,
+        requestFingerprint,
         userId: sessionResult.session.user.id,
         checkoutDetails: parsedRequest.checkoutDetails,
         itemSnapshots: ledgerState.itemSnapshots,
@@ -143,6 +143,7 @@ export async function POST(request: Request) {
           "Sandbox checkout order persistence failed during replay:",
           error instanceof Error ? error.message : "Unknown database error.",
         );
+        return null;
       });
     }
 

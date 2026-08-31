@@ -14,8 +14,8 @@ import type { CheckoutLineItem, CheckoutQuoteResult } from "@/types";
 import { formatCents, priceToCents } from "@/utils/server";
 import type {
   CheckoutItemSnapshot,
+  FulfillAndPersistCheckoutParams,
   GetSandboxCheckoutLedgerStateParams,
-  FulfillSandboxCheckoutInventoryParams,
   PersistCheckoutOrderParams,
   RecordSuccessfulSandboxCheckoutParams,
   SandboxCheckoutLedgerState,
@@ -49,6 +49,26 @@ function buildOrderLineItemValues(
       lineTotal: formatCents(unitCents * BigInt(itemSnapshot.quantity)),
     };
   });
+}
+
+async function hasPersistedOrderLineItems(idempotencyKey: string) {
+  const [existingOrder] = await db
+    .select({ id: order.id })
+    .from(order)
+    .where(eq(order.idempotencyKey, idempotencyKey))
+    .limit(1);
+
+  if (!existingOrder) {
+    return false;
+  }
+
+  const [existingLine] = await db
+    .select({ id: orderLineItem.id })
+    .from(orderLineItem)
+    .where(eq(orderLineItem.orderId, existingOrder.id))
+    .limit(1);
+
+  return Boolean(existingLine);
 }
 
 export async function getSandboxCheckoutLedgerState({
@@ -86,6 +106,12 @@ export async function getSandboxCheckoutLedgerState({
     return {
       status: SandboxCheckoutLedgerStatus.Unfulfilled,
       itemSnapshots: transaction.itemSnapshots,
+      transaction: {
+        id: transaction.id,
+        status: transaction.status,
+        amount: transaction.amount,
+        currency: transaction.currency,
+      },
     };
   }
 
@@ -101,80 +127,118 @@ export async function getSandboxCheckoutLedgerState({
   };
 }
 
-export async function persistCheckoutOrder({
+// Used only to recover an order whose inventory was already decremented by a
+// prior request but whose order/line-item rows never made it to disk (e.g. the
+// process crashed between the two). Inserts both in a single statement so this
+// recovery path can't itself leave a half-written order behind.
+async function persistOrderAtomically({
   idempotencyKey,
   userId,
   checkoutDetails,
   itemSnapshots,
   transaction,
 }: PersistCheckoutOrderParams): Promise<void> {
-  const [existingOrder] = await db
-    .select({ id: order.id })
-    .from(order)
-    .where(eq(order.idempotencyKey, idempotencyKey))
-    .limit(1);
-
-  if (existingOrder) {
-    const [existingLine] = await db
-      .select({ id: orderLineItem.id })
-      .from(orderLineItem)
-      .where(eq(orderLineItem.orderId, existingOrder.id))
-      .limit(1);
-
-    if (existingLine) {
-      return;
-    }
-
-    await db
-      .insert(orderLineItem)
-      .values(buildOrderLineItemValues(existingOrder.id, itemSnapshots));
-
-    return;
-  }
-
   const orderId = crypto.randomUUID();
-  const lineItemValues = buildOrderLineItemValues(orderId, itemSnapshots);
+  const lineItemSnapshotsJson = JSON.stringify(
+    buildOrderLineItemValues(orderId, itemSnapshots).map((lineItem) => ({
+      itemId: lineItem.itemId,
+      itemName: lineItem.itemName,
+      unitPrice: lineItem.unitPrice,
+      quantity: lineItem.quantity,
+      lineTotal: lineItem.lineTotal,
+    })),
+  );
 
-  await db.batch([
-    db.insert(order).values({
-      id: orderId,
-      userId,
-      idempotencyKey,
-      status: transaction.status,
-      totalAmount: transaction.amount,
-      currency: transaction.currency,
-      recipientName: checkoutDetails.fullName,
-      email: checkoutDetails.email,
-      phone: checkoutDetails.phone,
-      deliveryAddress: checkoutDetails.deliveryAddress,
-      deliveryInstructions: checkoutDetails.deliveryInstructions,
-    }),
-    db.insert(orderLineItem).values(lineItemValues),
-  ]);
+  await db.execute(sql`
+    WITH inserted_order AS (
+      INSERT INTO ${order} (
+        "id",
+        "user_id",
+        "idempotency_key",
+        "status",
+        "total_amount",
+        "currency",
+        "recipient_name",
+        "email",
+        "phone",
+        "delivery_address",
+        "delivery_instructions"
+      )
+      SELECT
+        ${orderId}::uuid,
+        ${userId},
+        ${idempotencyKey}::uuid,
+        ${transaction.status},
+        ${transaction.amount},
+        ${transaction.currency},
+        ${checkoutDetails.fullName},
+        ${checkoutDetails.email},
+        ${checkoutDetails.phone},
+        ${checkoutDetails.deliveryAddress},
+        ${checkoutDetails.deliveryInstructions}
+      WHERE NOT EXISTS (
+        SELECT 1 FROM ${order} WHERE "idempotency_key" = ${idempotencyKey}::uuid
+      )
+      RETURNING "id"
+    ),
+    resolved_order AS (
+      SELECT "id" FROM inserted_order
+      UNION ALL
+      SELECT existing_order."id"
+      FROM ${order} AS existing_order
+      WHERE existing_order."idempotency_key" = ${idempotencyKey}::uuid
+        AND NOT EXISTS (SELECT 1 FROM inserted_order)
+    ),
+    inserted_line_items AS (
+      INSERT INTO ${orderLineItem} (
+        "order_id",
+        "item_id",
+        "item_name",
+        "unit_price",
+        "quantity",
+        "line_total"
+      )
+      SELECT
+        resolved_order."id",
+        line_item."itemId"::integer,
+        line_item."itemName",
+        line_item."unitPrice"::numeric,
+        line_item."quantity"::integer,
+        line_item."lineTotal"::numeric
+      FROM resolved_order
+      CROSS JOIN jsonb_to_recordset(${lineItemSnapshotsJson}::jsonb) AS line_item(
+        "itemId" integer,
+        "itemName" text,
+        "unitPrice" text,
+        "quantity" integer,
+        "lineTotal" text
+      )
+      WHERE NOT EXISTS (
+        SELECT 1
+        FROM ${orderLineItem}
+        WHERE "order_id" = resolved_order."id"
+      )
+    )
+    SELECT 1
+  `);
 }
 
-export async function recordSuccessfulSandboxCheckout({
+export async function fulfillAndPersistCheckout({
   idempotencyKey,
   items: requestedItems,
   requestFingerprint,
-  transaction,
   userId,
   checkoutDetails,
   itemSnapshots,
-}: RecordSuccessfulSandboxCheckoutParams): Promise<SandboxCheckoutLedgerState> {
-  await db
-    .insert(braintreeSandboxTransaction)
-    .values({
+  transaction,
+}: FulfillAndPersistCheckoutParams): Promise<SandboxCheckoutLedgerState> {
+  if (await hasPersistedOrderLineItems(idempotencyKey)) {
+    return getSandboxCheckoutLedgerState({
       idempotencyKey,
       requestFingerprint,
       userId,
-      transactionId: transaction.id,
-      transactionStatus: transaction.status,
-      amount: transaction.amount,
-      currency: transaction.currency,
-      itemSnapshots,
-    })
-    .onConflictDoNothing();
+    });
+  }
 
   const ledgerState = await getSandboxCheckoutLedgerState({
     idempotencyKey,
@@ -182,69 +246,33 @@ export async function recordSuccessfulSandboxCheckout({
     userId,
   });
 
-  if (ledgerState.status === SandboxCheckoutLedgerStatus.Fulfilled) {
-    try {
-      if (ledgerState.itemSnapshots) {
-        await persistCheckoutOrder({
-          idempotencyKey,
-          userId,
-          checkoutDetails,
-          itemSnapshots: ledgerState.itemSnapshots,
-          transaction: ledgerState.transaction,
-        });
-      }
-    } catch (error: unknown) {
-      console.error(
-        "Sandbox checkout order persistence failed:",
-        error instanceof Error ? error.message : "Unknown database error.",
-      );
-    }
-
+  if (ledgerState.status === SandboxCheckoutLedgerStatus.Conflict) {
     return ledgerState;
+  }
+
+  if (
+    ledgerState.status === SandboxCheckoutLedgerStatus.Fulfilled &&
+    ledgerState.itemSnapshots
+  ) {
+    await persistOrderAtomically({
+      idempotencyKey,
+      userId,
+      checkoutDetails,
+      itemSnapshots: ledgerState.itemSnapshots,
+      transaction: ledgerState.transaction,
+    });
+
+    return getSandboxCheckoutLedgerState({
+      idempotencyKey,
+      requestFingerprint,
+      userId,
+    });
   }
 
   if (ledgerState.status !== SandboxCheckoutLedgerStatus.Unfulfilled) {
     return ledgerState;
   }
 
-  const fulfilledCheckout = await fulfillSandboxCheckoutInventory({
-    idempotencyKey,
-    items: requestedItems,
-    requestFingerprint,
-    userId,
-  });
-
-  if (fulfilledCheckout.status === SandboxCheckoutLedgerStatus.Fulfilled) {
-    try {
-      const snapshots =
-        fulfilledCheckout.itemSnapshots ?? ledgerState.itemSnapshots;
-
-      if (snapshots) {
-        await persistCheckoutOrder({
-          idempotencyKey,
-          userId,
-          checkoutDetails,
-          itemSnapshots: snapshots,
-          transaction: fulfilledCheckout.transaction,
-        });
-      }
-    } catch (error: unknown) {
-      console.error(
-        "Sandbox checkout order persistence failed:",
-        error instanceof Error ? error.message : "Unknown database error.",
-      );
-    }
-  }
-
-  return fulfilledCheckout;
-}
-
-export async function fulfillSandboxCheckoutInventory({
-  idempotencyKey,
-  items: requestedItems,
-  requestFingerprint,
-  userId,
-}: FulfillSandboxCheckoutInventoryParams): Promise<SandboxCheckoutLedgerState> {
   const sortedRequestedItems = [...requestedItems].sort(
     (firstItem, secondItem) => firstItem.id - secondItem.id,
   );
@@ -254,6 +282,16 @@ export async function fulfillSandboxCheckoutInventory({
         sql`(${requestedItem.id}::integer, ${requestedItem.quantity}::integer)`,
     ),
     sql`, `,
+  );
+  const orderId = crypto.randomUUID();
+  const lineItemSnapshotsJson = JSON.stringify(
+    buildOrderLineItemValues(orderId, itemSnapshots).map((lineItem) => ({
+      itemId: lineItem.itemId,
+      itemName: lineItem.itemName,
+      unitPrice: lineItem.unitPrice,
+      quantity: lineItem.quantity,
+      lineTotal: lineItem.lineTotal,
+    })),
   );
 
   await db.execute(sql`
@@ -288,26 +326,151 @@ export async function fulfillSandboxCheckoutInventory({
           SELECT "matched_count" FROM available_items
         ) = ${sortedRequestedItems.length}
       RETURNING inventory."id"
-    )
-    UPDATE ${braintreeSandboxTransaction} AS sandbox_transaction
-    SET "inventory_applied" = CASE
-      WHEN (
+    ),
+    fulfillment_success AS (
+      SELECT (
         SELECT count(*) FROM updated_items
-      ) = ${sortedRequestedItems.length}
-        THEN true
-      ELSE NULL
-    END
-    WHERE sandbox_transaction."idempotency_key" = ${idempotencyKey}
-      AND sandbox_transaction."request_fingerprint" = ${requestFingerprint}
-      AND sandbox_transaction."user_id" = ${userId}
-      AND sandbox_transaction."inventory_applied" = false
-      AND EXISTS (SELECT 1 FROM eligible_transaction)
+      ) = ${sortedRequestedItems.length} AS "ok"
+    ),
+    ledger_update AS (
+      UPDATE ${braintreeSandboxTransaction} AS sandbox_transaction
+      SET "inventory_applied" = true
+      WHERE sandbox_transaction."idempotency_key" = ${idempotencyKey}
+        AND sandbox_transaction."request_fingerprint" = ${requestFingerprint}
+        AND sandbox_transaction."user_id" = ${userId}
+        AND sandbox_transaction."inventory_applied" = false
+        AND EXISTS (SELECT 1 FROM eligible_transaction)
+        AND (SELECT "ok" FROM fulfillment_success)
+      RETURNING sandbox_transaction."idempotency_key"
+    ),
+    inserted_order AS (
+      INSERT INTO ${order} (
+        "id",
+        "user_id",
+        "idempotency_key",
+        "status",
+        "total_amount",
+        "currency",
+        "recipient_name",
+        "email",
+        "phone",
+        "delivery_address",
+        "delivery_instructions"
+      )
+      SELECT
+        ${orderId}::uuid,
+        ${userId},
+        ${idempotencyKey}::uuid,
+        ${transaction.status},
+        ${transaction.amount},
+        ${transaction.currency},
+        ${checkoutDetails.fullName},
+        ${checkoutDetails.email},
+        ${checkoutDetails.phone},
+        ${checkoutDetails.deliveryAddress},
+        ${checkoutDetails.deliveryInstructions}
+      FROM fulfillment_success
+      WHERE "ok"
+        AND EXISTS (SELECT 1 FROM ledger_update)
+        AND NOT EXISTS (
+          SELECT 1
+          FROM ${order}
+          WHERE "idempotency_key" = ${idempotencyKey}::uuid
+        )
+      RETURNING "id"
+    ),
+    resolved_order AS (
+      SELECT "id" FROM inserted_order
+      UNION ALL
+      SELECT existing_order."id"
+      FROM ${order} AS existing_order
+      WHERE existing_order."idempotency_key" = ${idempotencyKey}::uuid
+        AND EXISTS (SELECT 1 FROM fulfillment_success WHERE "ok")
+        AND NOT EXISTS (SELECT 1 FROM inserted_order)
+    ),
+    inserted_line_items AS (
+      INSERT INTO ${orderLineItem} (
+        "order_id",
+        "item_id",
+        "item_name",
+        "unit_price",
+        "quantity",
+        "line_total"
+      )
+      SELECT
+        resolved_order."id",
+        line_item."itemId"::integer,
+        line_item."itemName",
+        line_item."unitPrice"::numeric,
+        line_item."quantity"::integer,
+        line_item."lineTotal"::numeric
+      FROM resolved_order
+      CROSS JOIN jsonb_to_recordset(${lineItemSnapshotsJson}::jsonb) AS line_item(
+        "itemId" integer,
+        "itemName" text,
+        "unitPrice" text,
+        "quantity" integer,
+        "lineTotal" text
+      )
+      WHERE EXISTS (SELECT 1 FROM fulfillment_success WHERE "ok")
+        AND NOT EXISTS (
+          SELECT 1
+          FROM ${orderLineItem}
+          WHERE "order_id" = resolved_order."id"
+        )
+    )
+    SELECT 1
   `);
 
-  return getSandboxCheckoutLedgerState({
+  const fulfilledState = await getSandboxCheckoutLedgerState({
     idempotencyKey,
     requestFingerprint,
     userId,
+  });
+
+  if (
+    fulfilledState.status !== SandboxCheckoutLedgerStatus.Fulfilled ||
+    !(await hasPersistedOrderLineItems(idempotencyKey))
+  ) {
+    throw new Error(
+      "Sandbox checkout inventory and order persistence did not complete.",
+    );
+  }
+
+  return fulfilledState;
+}
+
+export async function recordSuccessfulSandboxCheckout({
+  idempotencyKey,
+  items: requestedItems,
+  requestFingerprint,
+  transaction,
+  userId,
+  checkoutDetails,
+  itemSnapshots,
+}: RecordSuccessfulSandboxCheckoutParams): Promise<SandboxCheckoutLedgerState> {
+  await db
+    .insert(braintreeSandboxTransaction)
+    .values({
+      idempotencyKey,
+      requestFingerprint,
+      userId,
+      transactionId: transaction.id,
+      transactionStatus: transaction.status,
+      amount: transaction.amount,
+      currency: transaction.currency,
+      itemSnapshots,
+    })
+    .onConflictDoNothing();
+
+  return fulfillAndPersistCheckout({
+    idempotencyKey,
+    items: requestedItems,
+    requestFingerprint,
+    userId,
+    checkoutDetails,
+    itemSnapshots,
+    transaction,
   });
 }
 

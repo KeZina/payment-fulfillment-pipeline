@@ -97,6 +97,10 @@ export function CheckoutForm({ items }: CheckoutFormProps) {
   const [isPaymentReady, setIsPaymentReady] = useState(false);
   const [isPaymentValid, setIsPaymentValid] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  // Set when the shopper explicitly asks to retry a stuck "Unknown" attempt.
+  // This unlocks the form for exactly one resubmission, which reuses that
+  // attempt's idempotency key instead of abandoning it.
+  const [isRetryRequested, setIsRetryRequested] = useState(false);
   const [checkoutFeedbackState, setCheckoutFeedbackState] =
     useState<CheckoutFeedbackState | null>(null);
   const basketFingerprint = createBasketFingerprint(items);
@@ -115,8 +119,10 @@ export function CheckoutForm({ items }: CheckoutFormProps) {
   // While a submission is in flight, the settled feedback sources (local
   // state, stored attempt, session) can briefly reflect an intermediate or
   // stale value. The loading state is authoritative here: never show a
-  // result banner alongside the "Processing…" button.
-  const feedback = isSubmitting ? null : settledFeedback;
+  // result banner alongside the "Processing…" button. A requested retry is
+  // authoritative too: it unlocks the form so the shopper can resubmit the
+  // same stuck attempt.
+  const feedback = isSubmitting || isRetryRequested ? null : settledFeedback;
 
   function setCheckoutFeedback(nextFeedback: CheckoutPaymentFeedback) {
     setCheckoutFeedbackState(
@@ -144,13 +150,17 @@ export function CheckoutForm({ items }: CheckoutFormProps) {
       return;
     }
 
-    const existingAttemptFeedback = getExistingAttemptFeedback(
-      userId,
-      basketFingerprint,
-    );
+    const existingAttempt = readStoredAttempt(userId, basketFingerprint);
+    // A retry only ever applies to an "Unknown" attempt, and only once: the
+    // flag is consumed as soon as this submission proceeds past the guard.
+    const isRetryOfUnknownAttempt =
+      isRetryRequested &&
+      existingAttempt?.status === SandboxAttemptStatus.Unknown;
 
-    if (existingAttemptFeedback) {
-      setCheckoutFeedback(existingAttemptFeedback);
+    if (existingAttempt && !isRetryOfUnknownAttempt) {
+      setCheckoutFeedback(
+        getExistingAttemptFeedback(userId, basketFingerprint),
+      );
       return;
     }
 
@@ -166,9 +176,15 @@ export function CheckoutForm({ items }: CheckoutFormProps) {
 
     isRequestInFlightRef.current = true;
     setIsSubmitting(true);
+    setIsRetryRequested(false);
     setCheckoutFeedback(null);
     let didStartCheckoutRequest = false;
-    const idempotencyKey = crypto.randomUUID();
+    // Reusing the stuck attempt's idempotency key means the sandbox gateway
+    // and the checkout route both settle the same transaction instead of
+    // creating a second charge for the same order.
+    const idempotencyKey = isRetryOfUnknownAttempt
+      ? existingAttempt.idempotencyKey
+      : crypto.randomUUID();
     const pendingAttempt = createPendingCheckoutAttempt(items, idempotencyKey);
 
     if (!storeAttempt(userId, pendingAttempt)) {
@@ -232,9 +248,18 @@ export function CheckoutForm({ items }: CheckoutFormProps) {
       return;
     }
 
+    setIsRetryRequested(false);
     clearStoredAttempt(userId);
     paymentRef.current?.clear();
     setCheckoutFeedback(null);
+  }
+
+  function handleRetryAttempt() {
+    if (!userId) {
+      return;
+    }
+
+    setIsRetryRequested(true);
   }
 
   const isLocked =
@@ -258,6 +283,7 @@ export function CheckoutForm({ items }: CheckoutFormProps) {
         isSubmitting={isSubmitting}
         onReadyChange={handleReadyChange}
         onResetAttempt={handleResetAttempt}
+        onRetryAttempt={handleRetryAttempt}
         onValidityChange={handleValidityChange}
       />
     </>

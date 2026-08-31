@@ -23,12 +23,27 @@ export type PersistCheckoutOrderParams = {
   transaction: SandboxTransactionSnapshot;
 };
 
+export type GetSandboxCheckoutLedgerStateParams = {
+  idempotencyKey: string;
+  requestFingerprint: string;
+  userId: string;
+};
+
+export type FulfillAndPersistCheckoutParams =
+  GetSandboxCheckoutLedgerStateParams & {
+    items: CheckoutLineItem[];
+    checkoutDetails: CheckoutDetails;
+    itemSnapshots: CheckoutItemSnapshot[];
+    transaction: SandboxTransactionSnapshot;
+  };
+
 export type SandboxCheckoutLedgerState =
   | { status: typeof SandboxCheckoutLedgerStatus.Missing }
   | { status: typeof SandboxCheckoutLedgerStatus.Conflict }
   | {
       status: typeof SandboxCheckoutLedgerStatus.Unfulfilled;
       itemSnapshots: CheckoutItemSnapshot[] | null;
+      transaction: SandboxTransactionSnapshot;
     }
   | {
       status: typeof SandboxCheckoutLedgerStatus.Fulfilled;
@@ -36,20 +51,5 @@ export type SandboxCheckoutLedgerState =
       itemSnapshots: CheckoutItemSnapshot[] | null;
     };
 
-export type GetSandboxCheckoutLedgerStateParams = {
-  idempotencyKey: string;
-  requestFingerprint: string;
-  userId: string;
-};
-
-export type FulfillSandboxCheckoutInventoryParams =
-  GetSandboxCheckoutLedgerStateParams & {
-    items: CheckoutLineItem[];
-  };
-
 export type RecordSuccessfulSandboxCheckoutParams =
-  FulfillSandboxCheckoutInventoryParams & {
-    transaction: SandboxTransactionSnapshot;
-    checkoutDetails: CheckoutDetails;
-    itemSnapshots: CheckoutItemSnapshot[];
-  };
+  FulfillAndPersistCheckoutParams;

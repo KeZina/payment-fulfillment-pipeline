@@ -4,7 +4,7 @@ import { Suspense } from "react";
 import { NavSearch } from "@/components/nav/nav-search";
 import { NavStoreLabel } from "@/components/nav/nav-store-label";
 import { NavUserBasket } from "../nav-user-basket";
-import { NavEmptyUserData } from "../nav-empty-user-data";
+import { NavUserDataFallback } from "../nav-user-data-fallback";
 import { navContentContainerStyles } from "./nav-content-container.styles";
 
 export function NavContentContainer() {
@@ -12,7 +12,7 @@ export function NavContentContainer() {
     <NavigationMenuList className={navContentContainerStyles.root}>
       <NavStoreLabel />
       <NavSearch />
-      <Suspense fallback={<NavEmptyUserData />}>
+      <Suspense fallback={<NavUserDataFallback />}>
         <NavUserData />
       </Suspense>
       <NavUserBasket />

@@ -6,7 +6,7 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "db:migrate": "drizzle-kit migrate",
+    "db:push": "drizzle-kit push",
     "lint": "eslint",
     "db:seed": "npx tsx --conditions=react-server --env-file=.env src/db/seed.ts"
   },
@@ -31,7 +31,6 @@
     "react-dom": "19.2.8",
     "react-intersection-observer": "^11.0.0",
     "server-only": "^0.0.1",
-    "shadcn": "^4.18.0",
     "sonner": "^2.0.8",
     "swr": "^2.5.1",
     "tailwind-merge": "^3.6.0",
@@ -51,6 +50,7 @@
     "drizzle-kit": "^0.31.10",
     "eslint": "^9.39.5",
     "eslint-config-next": "16.3.1",
+    "shadcn": "^4.18.0",
     "tailwindcss": "^4",
     "typescript": "6.0.3"
   }

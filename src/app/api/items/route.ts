@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { parseItemsRouteQuery } from "@/schemas/items-route-query";
 import { getItemsPage } from "@/lib/server/items";
+import { handleRouteHandlerError } from "@/utils/server/rethrow-route-handler-error";
 import * as v from "valibot";
 
 export async function GET(request: NextRequest) {
@@ -26,10 +27,6 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json(page);
   } catch (error) {
-    console.error(error);
-    return NextResponse.json(
-      { error: "Internal Server Error" },
-      { status: 500 },
-    );
+    return handleRouteHandlerError(error);
   }
 }

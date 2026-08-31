@@ -11,6 +11,7 @@ export const CHECKOUT_PAYMENT_COPY = {
   enterCardDetails: "Enter sandbox card details",
   sandboxApproved: "Sandbox approved",
   startAnotherTest: "Start another sandbox test",
+  retryUnknownAttempt: "Retry this payment",
   resetUnknownAttempt: "I checked — start a new sandbox test",
   footerExplanation:
     "This creates a simulated Sandbox transaction only. No real money can be charged. Use a USD Sandbox merchant account to match the displayed prices.",

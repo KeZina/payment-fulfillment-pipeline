@@ -61,6 +61,7 @@ const CheckoutPaymentContent = forwardRef<
     isSubmitting,
     onReadyChange,
     onResetAttempt,
+    onRetryAttempt,
     onRetryInitialization,
     onValidityChange,
   },
@@ -223,7 +224,10 @@ const CheckoutPaymentContent = forwardRef<
             <p className={checkoutPaymentStyles.error} role='alert'>
               {feedback.message}
             </p>
-            <Button type='button' variant='outline' onClick={onResetAttempt}>
+            <Button type='button' variant='outline' onClick={onRetryAttempt}>
+              {CHECKOUT_PAYMENT_COPY.retryUnknownAttempt}
+            </Button>
+            <Button type='button' variant='ghost' onClick={onResetAttempt}>
               {CHECKOUT_PAYMENT_COPY.resetUnknownAttempt}
             </Button>
           </div>

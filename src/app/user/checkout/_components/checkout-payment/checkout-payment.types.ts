@@ -40,5 +40,6 @@ export type CheckoutPaymentProps = {
   isSubmitting: boolean;
   onReadyChange: (isReady: boolean) => void;
   onResetAttempt: () => void;
+  onRetryAttempt: () => void;
   onValidityChange: (isValid: boolean) => void;
 };

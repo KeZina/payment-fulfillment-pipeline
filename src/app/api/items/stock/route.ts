@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getItemsStockByIds } from "@/lib/server/item-stock";
 import { parseItemsStockQuery } from "@/schemas/items-stock-query";
+import { handleRouteHandlerError } from "@/utils/server/rethrow-route-handler-error";
 
 export async function GET(request: NextRequest) {
   try {
@@ -19,10 +20,6 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({ items });
   } catch (error) {
-    console.error(error);
-    return NextResponse.json(
-      { error: "Internal Server Error" },
-      { status: 500 },
-    );
+    return handleRouteHandlerError(error);
   }
 }

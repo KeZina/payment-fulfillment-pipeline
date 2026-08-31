@@ -8,10 +8,9 @@ export {
 } from "./braintree";
 export {
   createSandboxCheckoutRequestFingerprint,
-  fulfillSandboxCheckoutInventory,
+  fulfillAndPersistCheckout,
   getCheckoutQuote,
   getSandboxCheckoutLedgerState,
-  persistCheckoutOrder,
   recordSuccessfulSandboxCheckout,
 } from "./checkout";
 export {

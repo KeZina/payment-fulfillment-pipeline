@@ -11,7 +11,7 @@ import {
   UserBlock02Icon,
 } from "@hugeicons/core-free-icons";
 
-export async function NavEmptyUserData() {
+export function NavEmptyUserData() {
   return (
     <NavigationMenuItem>
       <NavigationMenuTrigger aria-label='Open sign-in menu'>

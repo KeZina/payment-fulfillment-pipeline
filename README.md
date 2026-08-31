@@ -23,7 +23,11 @@ complete a simulated card checkout through Braintree Sandbox Hosted Fields.
 
 - Email and password sign-up and sign-in with Better Auth.
 - PostgreSQL-backed users, accounts, sessions, and verification records.
-- User and admin roles in the database schema.
+- Better Auth admin plugin with server-controlled roles and admin-only routes.
+- New accounts always receive the `user` role; `role` is not client-writable.
+- A signed-in admin can promote another user via Better Auth’s
+  `/admin/set-role` endpoint.
+- The first admin must be created directly in PostgreSQL (see below).
 - Protected basket, checkout, order history, and settings routes under `/user`.
 - Protected admin routes under `/admin` with role checks at the edge proxy and
   in server components and actions.
@@ -132,23 +136,14 @@ complete a simulated card checkout through Braintree Sandbox Hosted Fields.
 
 ### Environment
 
-Create an untracked `.env` file in the project root:
+Create an untracked `.env` file in the project root from the example:
 
-```dotenv
-DATABASE_URL=postgresql://...
-
-BETTER_AUTH_URL=http://localhost:3000
-BETTER_AUTH_SECRET=replace-with-a-stable-random-secret-at-least-32-characters
-
-BRAINTREE_ENVIRONMENT=Sandbox
-BRAINTREE_MERCHANT_ID=your-sandbox-merchant-id
-BRAINTREE_PUBLIC_KEY=your-sandbox-public-key
-BRAINTREE_PRIVATE_KEY=your-sandbox-private-key
-
-# Optional: selects a specific Sandbox merchant account, for example a USD
-# merchant account matching the storefront's displayed currency.
-BRAINTREE_MERCHANT_ACCOUNT_ID=your-sandbox-merchant-account-id
+```bash
+cp .env.example .env
+# Windows: copy .env.example .env
 ```
+
+Then fill in your database and Braintree Sandbox values.
 
 `BRAINTREE_MERCHANT_ID` and `BRAINTREE_MERCHANT_ACCOUNT_ID` are different
 values. The merchant ID is a required gateway credential. The optional merchant
@@ -173,17 +168,38 @@ Open `http://localhost:3000`.
 
 ### Database commands
 
-> **Database baseline note:** the current migration history assumes the Better
-> Auth and catalog tables already exist. It is not yet a complete clean-database
-> bootstrap. Review the migration files before running `db:migrate` against a
-> new or important database.
+Schema changes live in `src/db/schemas`. This repository does not commit
+Drizzle migration files. Bootstrap or update a database directly from the
+current schema with:
 
 ```bash
-npm run db:migrate
+npm run db:push
 npm run db:seed
 ```
 
+Use `drizzle-kit generate` only if you want to start maintaining versioned SQL
+migrations locally. It is optional and not required to run the app.
+
 The seed script loads `.env` and inserts the sample food catalog.
+
+#### First admin (database only)
+
+Sign up through the app first, then promote that account in PostgreSQL. The
+application cannot create the initial admin on its own.
+
+```sql
+UPDATE "user"
+SET role = 'admin'
+WHERE email = 'you@example.com';
+```
+
+Sign out and sign back in so the session picks up the new role.
+
+#### Promoting additional admins
+
+An existing admin can grant the admin role to another user through Better Auth’s
+admin API (`POST /api/auth/admin/set-role`). Non-admin sessions cannot change
+roles.
 
 ### Other commands
 
@@ -193,7 +209,7 @@ The seed script loads `.env` and inserts the sample food catalog.
 | `npm run build` | Create a production build |
 | `npm run start` | Run the production build |
 | `npm run lint` | Run ESLint |
-| `npm run db:migrate` | Apply Drizzle migrations |
+| `npm run db:push` | Sync the Drizzle schema to PostgreSQL |
 | `npm run db:seed` | Seed the sample catalog from `.env` |
 
 ## Checkout security boundary
@@ -223,8 +239,9 @@ ledger entry is returned to the browser as a successful checkout.
 - The storefront currently displays prices in `en-US` USD.
 - There is no refund flow or Braintree webhook handling yet.
 - The basket is local to one browser rather than synchronized to a user account.
-- Product artwork is currently illustrative placeholder UI.
-- Automated tests and continuous integration are not set up yet.
+- Product artwork is served from base64 blobs stored in PostgreSQL. Cold image
+  requests can be slower on first load; that trade-off is acknowledged and is
+  sufficient for this storefront for now.
 
 ## Project structure
 
