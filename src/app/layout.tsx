@@ -4,7 +4,6 @@ import "./globals.css";
 import { WithChildren } from "@/types";
 import { cn } from "@/lib";
 import { Toaster } from "@/components/ui/sonner";
-import { StoreFooter } from "@/app/_components/store-footer";
 import { ProvidersClient } from "@/app/_components/providers";
 import { StoreNavigation } from "@/app/_components/store-navigation";
 
@@ -47,7 +46,6 @@ export default function Layout({ children }: WithChildren) {
           <StoreNavigation />
           <div className='flex min-h-full flex-1 flex-col'>{children}</div>
         </ProvidersClient>
-        <StoreFooter />
         <Toaster position='top-right' />
       </body>
     </html>
